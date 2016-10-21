@@ -134,6 +134,18 @@ define([
     DoFirstAction();
   }
 
+  function NoiseProfileClicked() {
+    action_queue.push(DoNoiseProfile);
+    DoFirstAction();
+  }
+
+  function RemoveNoiseClicked() {
+    action_queue.push(DoNoiseRemoval);
+    action_queue.push(DoNormalizeInput);
+    action_queue.push(DoNormalizeOutput);
+    DoFirstAction();
+  }
+
   function SaveOutputClicked() {
     var wav_blob = WavEncoder.AudioBufferToWavBlob(IndexGlobal.PROCESSED_AUDIO_BUFFER); 
 
@@ -339,8 +351,8 @@ define([
     // Add the click handlers.
     $("#load_example").click(function() { LoadExampleClicked(); });
     $("#declip_button").click(function() { DeclipClicked(); });
-    $("#noise_removal_button").click(function() { DoNoiseRemoval(); });
-    $("#noise_profile_button").click(function() { DoNoiseProfile(); });
+    $("#noise_removal_button").click(function() { RemoveNoiseClicked(); });
+    $("#noise_profile_button").click(function() { NoiseProfileClicked(); });
     $("#download_audio_button").click(function() { SaveOutputClicked(); });
 
     // Construct the web workers.

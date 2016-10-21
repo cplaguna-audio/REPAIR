@@ -269,6 +269,22 @@
   }
 
   /*
+   * returns (alpha .* x) + ((1 - alpha) .* y). Works on all indices up to the
+   * shorter of the two arrays. 
+   * e.g. x = [1, 2, 3, 4], y = [3, 4], alpha = 0.8, output = [1.4, 2.4]
+   */
+  function SignalWeightedAverage(x, y, alpha) {
+    out_length = Math.min(x.length, y.length);
+    out = new Float32Array(out_length);
+
+    for(var idx = 0; idx < out_length; idx++) {
+      out[idx] = (alpha * x[idx]) + ((1 - alpha) * y[idx]);
+    }
+
+    return out;
+  }
+
+  /*
    * FindPeaks()
    *
    * Finds local maxima of x that have a value greater than or equal to |thresh|.
@@ -449,6 +465,7 @@
     SignalSubtract: SignalSubtract,
     SignalPointwiseMultiplyInPlace: SignalPointwiseMultiplyInPlace,
     SignalPointwiseDivideInPlace: SignalPointwiseDivideInPlace,
+    SignalWeightedAverage: SignalWeightedAverage,
     FindPeaks: FindPeaks,
     Histogram: Histogram,
     FindBin: FindBin,

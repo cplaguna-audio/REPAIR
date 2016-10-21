@@ -61,6 +61,7 @@ define([
     tests_pass = tests_pass && TestSignalScale();
     tests_pass = tests_pass && TestSignalAdd();
     tests_pass = tests_pass && TestSignalSubtract();
+    tests_pass = tests_pass && TestSignalWeightedAverage();
     tests_pass = tests_pass && TestFindPeaks();
     tests_pass = tests_pass && TestHistogram();
     tests_pass = tests_pass && TestFindBin();
@@ -324,6 +325,25 @@ define([
     result = SignalProcessing.SignalSubtract(x3, y3);
     if(!TestHelpers.ArrayEquality(result, correct4)) {
       console.log('Test Failed: SignalSubtract() #3');
+      tests_pass = false;
+    }
+
+    return tests_pass;
+  }
+  
+  function TestSignalWeightedAverage() {
+    var TOLERANCE = 0.0001;
+    var tests_pass = true;
+
+    var x1 = [1, 2, 3, 4];
+    var y1 = [3, 4];
+    var alpha1 = 0.8;
+    var correct1 = [1.4, 2.4];
+
+    var result1 = SignalProcessing.SignalWeightedAverage(x1, y1, alpha1);
+    if(!TestHelpers.ArrayEqualityTolerance(result1, correct1, TOLERANCE)) {
+      console.log('Test Failed: SignalSubtract() #1.1');
+      console.log(result1);
       tests_pass = false;
     }
 

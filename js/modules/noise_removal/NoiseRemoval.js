@@ -103,8 +103,145 @@
     return noise_profile;
   }
 
-  function RemoveNoiseGivenProfile(x, n, channel_idx, params) {
+  function RemoveNoiseGivenProfile(x, n, channel_idx, params, test_mode) {
+    var alpha = 1;
 
+    block_size = params[1];
+    hop_size = params[2];
+    channel_length = x.length;
+    out_channel = new Float32Array(channel_length);
+    for(var sample_idx = 0; sample_idx < channel_length; sample_idx++) {
+      out_channel[sample_idx] = 0;
+    }
+
+    var cur_block = new Float32Array(block_size);
+    var hann_window = SignalProcessing.HannWindow(block_size);
+
+    // For each block, we will calculate masks which will define the noise
+    // removal. Processing will consist of multiplying the fft_magnitudes by
+    // the masks.
+    var masks = new Float32Array(block_size);
+
+    // These are the masks from the last block. We smooth the masks over time
+    // to avoid artifacts from fast-varying masks.
+    var prev_masks = new Float32Array(block_size);
+
+    // The signal to noise ratio (per frequency) of the previos block. This is 
+    // calculated by assuming the noise removal removes all the noise: 
+    // |x_hat|.^2 / |n|.^2
+    var prev_snr = new Float32Array(block_size);
+
+    var start_idx = 0;
+    var stop_idx = start_idx + block_size - 1;
+    var block_idx = 0;
+
+    var fft_real = new Float32Array(block_size);
+    var fft_imag = new Float32Array(block_size);
+    var fft_mag = new Float32Array(block_size);
+    var fft_phase = new Float32Array(block_size);
+
+    var imag_input = new Float32Array(block_size);
+
+    // We don't care about this, but we need a spot to write the ifft imaginary
+    // output.
+    var imag_output = new Float32Array(block_size);
+
+    // Zero fill.
+    for(var bin_idx = 0; bin_idx < block_size; bin_idx++) {
+      fft_imag[bin_idx] = 0;
+      masks[bin_idx] = 0;
+      prev_masks[bin_idx] = 0;
+      prev_snr[bin_idx] = 0;
+    }
+
+    // Processing block by block.
+    while(stop_idx < channel_length) {
+      var cur_progress = start_idx / channel_length;
+
+      if(!test_mode) {
+        postMessage([cur_progress, channel_idx]);
+      }
+
+      Blocking.CopyToBlock(x, channel_length, start_idx, stop_idx, cur_block, block_size); 
+
+      FFTWrapper.FFT(cur_block, imag_input, fft_real, fft_imag);
+      FFTWrapper.GetFFTMagnitudeAndPhase(fft_real, fft_imag, fft_mag, fft_phase);
+
+      // Find the masks.
+      masks = GetMasks(fft_mag, n, prev_snr, block_size);
+
+      // Smooth the masks.
+      masks = SignalProcessing.SignalWeightedAverage(masks, prev_masks, alpha)
+
+      // Apply the masks.
+      SignalProcessing.SignalPointwiseMultiplyInPlace(fft_mag, masks);
+
+      // Calculate the prev_snr.
+      prev_snr = CalculateSNR(fft_mag, n, block_size);
+
+      // Transform back to the time domain.
+      FFTWrapper.GetFFTRealAndImag(fft_mag, fft_phase, fft_real, fft_imag);
+      FFTWrapper.IFFT(fft_real, fft_imag, cur_block, imag_output);
+
+      // Apply window.
+      SignalProcessing.SignalPointwiseMultiplyInPlace(cur_block, hann_window);
+
+      Blocking.OverlapAndAdd(out_channel, channel_length, start_idx, stop_idx, cur_block, block_size);
+
+      // Copy masks into prev_masks.
+      Blocking.CopyToBlock(masks, block_size, 0, block_size - 1, prev_masks, block_size);
+
+      start_idx = start_idx + hop_size;
+      stop_idx = start_idx + block_size - 1;
+      block_idx++;
+    }
+
+    // Window Compensation.
+    var num_blocks = block_idx;
+    var window_compensation = new Float32Array(channel_length);
+    start_idx = 0;
+    stop_idx = block_size - 1;
+    for(var block_idx = 0; block_idx < num_blocks; block_idx++) {
+      Blocking.OverlapAndAdd(window_compensation, channel_length, start_idx, stop_idx, hann_window, block_size);
+      start_idx = start_idx + hop_size;
+      stop_idx = start_idx + block_size - 1;
+    }
+    
+    // Ensure we don't divide by zero.
+    for(var signal_idx = 0; signal_idx < channel_length; signal_idx++) {
+      if(window_compensation[signal_idx] < 0.01) {
+        window_compensation[signal_idx] = 0.01;
+      }
+    }
+    
+    SignalProcessing.SignalPointwiseDivideInPlace(out_channel, window_compensation);
+
+    return out_channel;
+  }
+
+  // TODO: TEST THIS FUNCTION;
+  function GetMasks(y_mag, n_mag, prev_snr, block_size) {
+    masks = new Float32Array(block_size);
+
+    for(var bin_idx = 0; bin_idx < block_size; bin_idx++) {
+      masks[bin_idx] = y_mag[bin_idx];
+    }
+
+    return masks;
+  }
+
+  // TODO: TEST THIS FUNCTION;
+  // signal and noise are fft magnitudes.
+  function CalculateSNR(signal, noise, block_size) {
+    snr = new Float32Array(block_size);
+
+    for(var bin_idx = 0; bin_idx < block_size; bin_idx++) {
+      cur_s = signal[bin_idx];
+      cur_n = noise[bin_idx];
+      snr[bin_idx] = (cur_s * cur_s) / (cur_n * cur_n);
+    }
+    
+    return snr;
   }
 
   /* Public variables go here. */
