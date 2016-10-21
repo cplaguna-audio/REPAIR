@@ -25,9 +25,9 @@
  */
 
  /*****************************************************************************\
- *                           TestSignalProcessing.js                         *
+ *                             TestNoiseRemoval.js                           *
  *                                                                           *
- *  Tests for the signal processing module.                                  *
+ *  Tests for the noise removal module.                                      *
  *                                                                           *
  *****************************************************************************/
 
