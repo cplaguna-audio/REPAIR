@@ -1,0 +1,89 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta http-equiv="Cache-control" content="no-cache">
+  <title>REPAIR</title>
+
+  <link rel="stylesheet" type="text/css" href="css/third_party/w2ui-1.4.3.css"></link>
+  <link rel="stylesheet" type="text/css" href="css/index.css">
+
+  <script src="js/third_party/requirejs/require.js" data-main="js/AppIndex"></script>
+
+</head>
+
+<body>
+  <h1><center><img src="resources/logo_2.png"></img></center></h1>
+  <div id="my_content" style="margin:auto">
+    <div id="intro_text">
+      <p>REPAIR is a tool for repairing and enhancing audio files, particularly
+      audio recorded from mobile phones. </p>
+      <p>Drag and drop a file into the workspace below to get started!</p>
+    </div>
+
+    <div class="small_padding"></div>
+
+    <div id="waveform_view">
+      <div id="original_waveform_container" >
+        <div width="100%">
+        <div id="file_name"></div>
+        <button id="load_example">Load Example</button>
+        <div class="waveform_title">Input</div>   
+        <div class="small_padding"></div>
+        <div id="original_audio_waveform" class="wavesurfer"></div>
+      </div><div class="small_padding"></div>
+
+      <div id="processed_waveform_container">
+        <div class="waveform_title">Output</div>
+        <div class="small_padding"></div>
+        <div id="processed_audio_waveform" class="wavesurfer"></div>
+      </div><div class="small_padding"></div><div class="small_padding"></div>
+
+      <div id="transport_container">
+        <div id="transport_zoom_container">
+          <img id="zoom_in_button" class="zoom_image" type="image" src="resources/transport/plus.png"></img>
+          <img id="zoom_out_button" class="zoom_image" type="image" src="resources/transport/minus.png"></img>
+        </div>
+
+        <div id="transport_processing_container">
+          <button id="declip_button" class="processing_button">Declip</button>
+          <button id="noise_profile_button" class="processing_button">Get Noise Profile</button>
+          <button id="noise_removal_button" class="processing_button">Remove Noise</button>
+        </div>
+
+        <div id="transport_buttons_container">
+          <img id="toggle_waveform_button" class="transport_image" type="image" src="resources/transport/toggle_original.png"></img>
+          <img id="play_pause_button" class="transport_image" type="image" src="resources/transport/play.png"></img>
+          <img id="play_selection_button" class="transport_image" type="image" src="resources/transport/play_selection.png"></img>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="audio_processing_progress_popup" style="display: none; width: 650px; height: 110px; overflow: auto">
+      <div id="progress_title" rel="title">
+          Processing Audio
+      </div>
+      <div rel="body">
+        <div style="padding: 10; font-size: 11px; line-height: 150%;">
+          Progress: 
+          <div id="progress_bar" style="position: relative; width: 100%; height: 20px; background-color: grey;">
+            <div id="progress_bar_progress" style="position: absolute; width: 1%; height: 100%; background-color: green"></div>
+          </div>
+        </div>
+      </div>
+  </div>
+
+  <p><a href="listening_examples.html">Listening Examples</a></p>
+
+  <div id="plot_div" width=100px height=100px></div>
+  <a id="download_processed_audio" style="display:none;"></a>
+  <iframe id="my_iframe" style="display:none;">
+  <script>
+  function Download(url) {
+      document.getElementById('my_iframe').src = url;
+  };
+  </script>
+</body>
+
+</html>
