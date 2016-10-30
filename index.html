@@ -13,16 +13,16 @@
 </head>
 
 <body>
-  <h1><center><img src="resources/logo_2.png"></img></center></h1>
+  <h1><center> REPAIR</div><!--<img src="resources/logo_2.png"></img>--> </center></h1>
   <div id="my_content" style="margin:auto">
-    <div id="intro_text">
+    <!--<div id="intro_text">
       <p>REPAIR is a tool for repairing and enhancing audio files, particularly
       audio recorded from mobile phones. </p>
       <p>Drag and drop a file into the workspace below to get started!</p>
-    </div>
+    </div>-->
 
-    <div class="small_padding"></div>
-
+    <!--<div class="small_padding"></div>-->
+    
     <div id="waveform_view">
       <div id="original_waveform_container" >
         <div width="100%">
@@ -46,9 +46,7 @@
         </div>
 
         <div id="transport_processing_container">
-          <button id="declip_button" class="processing_button">Declip</button>
-          <button id="noise_profile_button" class="processing_button">Get Noise Profile</button>
-          <button id="noise_removal_button" class="processing_button">Remove Noise</button>
+          <button id="repair_button" class="processing_button">Repair!</button>
         </div>
 
         <div id="transport_buttons_container">
@@ -57,8 +55,69 @@
           <img id="play_selection_button" class="transport_image" type="image" src="resources/transport/play_selection.png"></img>
         </div>
       </div>
+
+      <div class="small_padding"></div>
+      <div class="small_padding"></div>
+      <div class="small_padding"></div>
+
+      <div id="plugins_container">
+        <img id="declip_image" class="plugin_image" src="resources/DeclipIconOff.png"></img>
+        <img id="auto_eq_image" class="plugin_image" src="resources/AutoEQIconOff.png"></img>
+        <div id="noise_removal_div"><img id="noise_removal_image" class="plugin_image" src="resources/RemoveNoiseIconOff.png"></img></div>
+      </div>
+
+      <div class="small_padding"></div>
+      <div class="small_padding"></div>
+
+      <div id="declip_tab" class="tab"></div>
+      <div id="noise_removal_tab" class="tab"></div>
+      <div id="auto_eq_tab" class="tab"></div>
+
+      <div id="declip_options_view" class ="options_view">
+        <div class="explanation_view">
+          <div class="explanation">
+            Some percent of the audio file contains clipping.
+          </div>
+        </div>
+        <div class="parameters_view">
+        </div>
+        <div class="activate_view">
+          <button id="declip_activate_button" class="activate_button">Activate</button>
+        </div>
+
+      </div>
+      <div id="noise_removal_options_view" class ="options_view">
+        <div class="explanation_view">
+          <div class="explanation">
+            To remove noise, we need to know some characteristics of the noise you
+            wish to remove. Therefore, please select a portion of the <b>input</b> file 
+            containing only noise. The beginning or end of the audio file might be
+            a good place to start.
+          </div>
+        </div>
+        <div class="parameters_view">
+            <button id="noise_profile_button">Get Noise Profile</button>
+        </div>
+        <div class="activate_view">
+          <button id="noise_removal_activate_button" class="activate_button">Activate</button>
+        </div>
+      </div>
+      <div id="auto_eq_options_view" class ="options_view">
+        <div class="explanation_view">
+          <div class="explanation">
+            The auto-equalizer explanation goes here.
+          </div>
+        </div>
+        <div class="parameters_view">
+        </div>
+        <div class="activate_view">
+          <button id="auto_eq_activate_button" class="activate_button">Activate</button>
+        </div>
+      </div>
     </div>
   </div>
+  <p><a href="listening_examples.html">Listening Examples</a></p>
+  <div id="empty_option"></div>
 
   <div id="audio_processing_progress_popup" style="display: none; width: 650px; height: 110px; overflow: auto">
       <div id="progress_title" rel="title">
@@ -74,7 +133,6 @@
       </div>
   </div>
 
-  <p><a href="listening_examples.html">Listening Examples</a></p>
 
   <div id="plot_div" width=100px height=100px></div>
   <a id="download_processed_audio" style="display:none;"></a>

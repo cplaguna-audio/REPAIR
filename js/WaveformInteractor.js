@@ -76,8 +76,9 @@ define([
       this.original_wavesurfer = Object.create(WaveSurfer);
       this.original_wavesurfer.init({
           container: this.original_audio_element,
-          waveColor: 'blue',
-          progressColor: 'blue',
+          waveColor: '#922',
+          progressColor: '#922',
+          cursorColor: '#611',
           scrollParent: true
       });
       this.original_wavesurfer.on('ready', function() {
@@ -99,8 +100,9 @@ define([
       this.processed_wavesurfer = Object.create(WaveSurfer);
       this.processed_wavesurfer.init({
           container: this.processed_audio_element,
-          waveColor: 'blue',
-          progressColor: 'blue',
+          waveColor: '#33B',
+          progressColor: '#33B',
+          cursorColor: '#136',
           scrollParent: true
       });
       this.processed_wavesurfer.on('ready', function() {
@@ -173,6 +175,18 @@ define([
       this.DisableInteraction();
     };
 
+    /* 
+     * Accessors
+     */
+
+    this.GetOriginalRegionBounds = function() {
+      if(this.original_region === null) {
+        return { start: -1, end: -1 };
+      }
+
+      return { start: this.original_region.start, end: this.original_region.end };
+    }
+ 
     /*
      * Event handlers.
      */
@@ -436,7 +450,7 @@ define([
       this.original_wavesurfer.toggleMute();
       this.original_audio_element.style.opacity = "1";
       this.processed_wavesurfer.toggleMute();
-      this.processed_audio_element.style.opacity = "0.2";
+      this.processed_audio_element.style.opacity = "0.4";
       this.original_on = true;
 
       toggle_image_el = document.getElementById("toggle_waveform_button");
@@ -452,7 +466,7 @@ define([
       this.processed_wavesurfer.toggleMute();
       this.processed_audio_element.style.opacity = "1";
       this.original_wavesurfer.toggleMute();
-      this.original_audio_element.style.opacity = "0.2";
+      this.original_audio_element.style.opacity = "0.4";
       this.original_on = false;
 
       toggle_image_el = document.getElementById("toggle_waveform_button");

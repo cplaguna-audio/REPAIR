@@ -58,6 +58,7 @@ define([
     tests_pass = tests_pass && TestExponentialSmoothingForwardBack();
     tests_pass = tests_pass && TestApplyFeedForwardFilter();
     tests_pass = tests_pass && TestApplyFeedForwardFilterBackwards();
+    tests_pass = tests_pass && TestApplyMedianFilter();
     tests_pass = tests_pass && TestSignalScale();
     tests_pass = tests_pass && TestSignalAdd();
     tests_pass = tests_pass && TestSignalSubtract();
@@ -159,7 +160,7 @@ define([
     return tests_pass;
   }
 
-  function TestApplyFeedForwardFilter(x, ff_coeffs) {
+  function TestApplyFeedForwardFilter() {
     var TOLERANCE = 0.0001;
     var tests_pass = true;
 
@@ -190,7 +191,7 @@ define([
     return tests_pass;
   }
 
-  function TestApplyFeedForwardFilterBackwards(x, ff_coeffs) {
+  function TestApplyFeedForwardFilterBackwards() {
     var TOLERANCE = 0.0001;
     var tests_pass = true;
 
@@ -213,6 +214,23 @@ define([
     if(!TestHelpers.ArrayEqualityTolerance(result2, correct2, TOLERANCE)) {
       console.log('Test failed: TestApplyFeedForwardFilterBackwards() #2');
       console.log(result2);
+      tests_pass = false;
+    }
+
+    return tests_pass;
+  }
+
+function TestApplyMedianFilter() {
+    var tests_pass = true;
+
+    var x1 = [43, 47, 34, 38, 38, 20, 33];
+    var order = 5;
+    var correct1 = [43, 43, 38, 38, 34, 38, 33];
+
+    var result1 = SignalProcessing.ApplyMedianFilter(x1, order)
+    if(!TestHelpers.ArrayEquality(result1, correct1)) {
+      console.log('Test failed: TestApplyMedianFilter() #1');
+      console.log(result1);
       tests_pass = false;
     }
 

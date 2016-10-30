@@ -37,7 +37,7 @@ define([
   ], function() {
 
   // Global Variables for main.html.
-  var RUN_TESTS = true;
+  var RUN_TESTS = false;
 
   var MAX_NUM_CHANNELS = 2;
   var BLOCK_SIZE = 512;
@@ -51,7 +51,12 @@ define([
                 did_get_known_points: false,
                 did_declip_long_bursts: false,
                 did_profile_noise: false,
-                did_remove_noise: false };
+                did_remove_noise: false,
+
+                declip_active: false,
+                noise_removal_active: false,
+                auto_eq_active: false
+              };
 
   var AUDIO_CONTEXT = new AudioContext();
 
@@ -63,6 +68,8 @@ define([
 
   // The profile of the stationary noise that the user selected (for noise
   // removal).
+  var NOISE_REGION_START;
+  var NOISE_REGION_STOP;
   var NOISE_PROFILE;
 
   var WAVEFORM_INTERACTOR;
@@ -159,6 +166,8 @@ define([
 
       INPUT_AUDIO_BUFFER: INPUT_AUDIO_BUFFER,
       PROCESSED_AUDIO_BUFFER: PROCESSED_AUDIO_BUFFER,
+      NOISE_REGION_START: NOISE_REGION_START,
+      NOISE_REGION_STOP: NOISE_REGION_STOP,
       NOISE_PROFILE: NOISE_PROFILE,
 
       SHORT_CLIP_INTERVALS: SHORT_CLIP_INTERVALS,

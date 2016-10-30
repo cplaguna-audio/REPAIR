@@ -179,6 +179,39 @@
     return y;
   }
 
+  function ApplyMedianFilter(x, order) {
+    var x_length = x.length;
+    var y = new Float32Array(x_length);
+    var half_order = Math.floor(order / 2);
+    var block = new Float32Array(order);
+
+    for(var idx = 0; idx < x_length; idx++) {
+      start_idx = idx - half_order;
+      stop_idx = start_idx + order - 1;
+
+      // Avoid going out of bounds.
+      start_idx = Math.max(0, start_idx);
+      stop_idx = Math.min(x_length - 1, stop_idx);
+
+      // Put all the samples into a block and sort the block. Median is in the
+      // center of the block.
+      block_length = stop_idx - start_idx + 1;
+      var block = new Float32Array(block_length);
+      block_idx = 0;
+      for(var x_idx = start_idx; x_idx <= stop_idx; x_idx++) {
+        block[block_idx] = x[x_idx];
+        block_idx++;
+      }
+
+      block.sort();
+      var med_idx = Math.floor(block.length / 2);
+      var med = block[med_idx];
+      y[idx] = med;
+    }
+
+    return y;
+  }
+
   /*
    * SignalScale()
    *
@@ -460,6 +493,7 @@
     ExponentialSmoothingForwardBack: ExponentialSmoothingForwardBack,
     ApplyFeedForwardFilter: ApplyFeedForwardFilter,
     ApplyFeedForwardFilterBackwards: ApplyFeedForwardFilterBackwards,
+    ApplyMedianFilter: ApplyMedianFilter,
     SignalScale: SignalScale,
     SignalAdd: SignalAdd,
     SignalSubtract: SignalSubtract,

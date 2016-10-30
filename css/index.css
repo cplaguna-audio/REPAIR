@@ -7,8 +7,17 @@
 
 
 body {
-  background-color:#F9F9F9;
+  background-color:#FEFEFE;
+  /* background-image: url("../resources/background-3.jpg"); 
+  background-size: 100% 100%; */
+
 }
+
+h1 {
+  color: #000000;
+  font-style: bold italic;
+}
+
 
 #intro_text {
   padding-left:25px;
@@ -28,7 +37,19 @@ body {
 }
 
 #load_example {
+  color: #AFA5AA;
   float:right;
+  background-color: #444444;
+  border-style: solid;
+  border-width: 1px;
+  border-color: #000000;
+  border-radius: 3px;
+  box-shadow: 0px 1px 1px 0 #666666, 0px 1px 1px 0 #666666;
+}
+
+#load_example:focus {
+  outline: 0;
+  background-color: #3A3A3A;
 }
 
 .waveform_title {
@@ -40,7 +61,10 @@ body {
 .wavesurfer {
   border-style: solid; 
   border-width: 1px;
-  background-color: white;
+  border-color: #000000;
+  border-radius: 5px;
+  background-color: #EEEEEE;
+
 }
 
 #transport_container {
@@ -55,7 +79,10 @@ body {
   margin:0 auto;
   border-style: solid; 
   border-width: 1px; 
-  background-color: #777777;
+  border-radius: 5px;
+  background-color: #444444;
+  box-shadow: 0px 1px 1px 0 #666666, 0px 1px 1px 0 #666666;
+
 }
 
 .transport_image {
@@ -68,7 +95,11 @@ body {
   padding:3px;
   border-style: solid; 
   border-width: 1px; 
-  background-color: #888888;
+  border-radius: 5px;
+  border-color: #000000;
+
+  background-color: #444444;
+  box-shadow: 0px 1px 1px 0 #666666, 0px 1px 1px 0 #666666;
 
 }
 
@@ -80,16 +111,167 @@ body {
 #transport_processing_container {
   float:right;
   padding:3px;
+
 }
 
 .processing_button {
-  height: 0.3in;
-  border-style:groove;
+  font-size: 1.2em;
+  color: #AFA5AA;
+  float:right;
+  background-color: #444444;
+  border-style: solid;
+  border-width: 1px;
+  border-color: #000000;
+  border-radius: 3px;
+  box-shadow: 0px 1px 1px 0 #666666, 0px 1px 1px 0 #666666;
+}
+
+.processing_button:focus {
+  outline: 0;
+  background-color: #3A3A3A;
 }
 
 #waveform_view {
+  color: #000000;
   border-style: solid; 
   border-width: 1px;
+  border-color: #000000;
   padding: 10px;
-  background-color: #AAAAAA;
+  background: rgba(150,150,150,0.999);
+  border-radius: 20px;
+  box-shadow: 0 4px 5px 0 #333333, 0 4px 5px 0 #333333;
+}
+
+.tab {
+  position: relative;
+  display: inline-block;
+  padding: 1em;
+  padding-top:0.5em;
+  padding-bottom: 0.25em;
+  margin: 1em;
+  margin-bottom: 0em;
+  color: black;
+  text-align: center;
+  display: none;
+}
+
+.tab::before {
+  content: '';
+  position: absolute;
+  top: 0; right: 0; bottom: 0; left: 0;
+
+  background-color: #BBBBBB;
+  transform: perspective(10px) rotateX(3deg);
+  border-style: solid; 
+  border-width: 1px;
+  border-color: #333333;
+  border-bottom-style: none;
+  border-radius: 10px 10px 0 0;
+  z-index: 1;
+}
+
+#declip_tab::after {
+  content: 'Declip';
+  position: relative;
+  z-index: 4;
+}
+
+#noise_removal_tab::after {
+  content: 'Noise Removal';
+  position: relative;
+  z-index: 4;
+}
+
+#auto_eq_tab::after {
+  content: 'Auto-Eq';
+  position: relative;
+  z-index: 4;
+}
+
+#plugins_container {
+  width: 75%;
+  margin:0 auto;
+}
+
+.plugin_image {
+  height: 1in;
+  width: 1in;
+}
+
+#declip_image {
+  float:left;
+}
+
+#noise_removal_div {
+  width: 1in;
+  margin:0 auto;
+}
+
+#auto_eq_image {
+  float:right;
+}
+
+.options_view {
+  border-style: solid;
+  border-width: 1px;
+  background-color: #BBBBBB;
+  display: none;
+
+  overflow: auto;
+
+  border-radius: 5px;
+}
+
+.explanation_view {
+  padding: 1%;
+
+  float: left;
+  width: 31%;
+  height: 98%;
+}
+
+.parameters_view {
+  padding: 1%;
+
+  float: left;
+  width: 45%;
+  height: 98%;
+}
+
+.activate_view {
+  padding: 1%;
+  float: left;
+  width: 17%;
+  height: 98%;
+}
+
+.explanation {
+  width: 96%;
+  height: 100%;
+  padding: 10px;
+  background-color: #EEEEEE;
+  border-style: solid;
+  border-width: 1px;
+}
+
+#empty_option {
+  height: 200px;
+}
+
+.activate_button {
+  display: block;
+  font-size: 1.2em;
+  float:right; /* margin: 0 auto; */
+  color: #AFA5AA;
+  background-color: #444444;
+  border-style: solid;
+  border-width: 1px;
+  border-color: #000000;
+  border-radius: 3px;
+  box-shadow: 0px 1px 1px 0 #666666, 0px 1px 1px 0 #666666;
+}
+
+.activate_button:focus {
+  outline: 0;
+  background-color: #3A3A3A;
 }

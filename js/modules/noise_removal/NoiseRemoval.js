@@ -105,6 +105,7 @@
 
   function RemoveNoiseGivenProfile(x, n, channel_idx, params, test_mode) {
     var alpha = 1;
+    var medfilt_order = 11;
 
     block_size = params[1];
     hop_size = params[2];
@@ -173,6 +174,9 @@
       // Smooth the masks.
       masks = SignalProcessing.SignalWeightedAverage(masks, prev_masks, alpha)
 
+      // Median filter the masks by frequency.
+      masks = SignalProcessing.ApplyMedianFilter(masks, medfilt_order);
+
       // Apply the masks.
       SignalProcessing.SignalPointwiseMultiplyInPlace(fft_mag, masks);
 
@@ -221,10 +225,23 @@
 
   // TODO: TEST THIS FUNCTION;
   function GetMasks(y_mag, n_mag, prev_snr, block_size) {
-    masks = new Float32Array(block_size);
+    // Amount to smooth the prior snr. 1 -> no smoothing, 0 -> 100% smoothing.
+    var PRIOR_ALPHA = 0.5;
+    var masks = new Float32Array(block_size);
 
     for(var bin_idx = 0; bin_idx < block_size; bin_idx++) {
-      masks[bin_idx] = y_mag[bin_idx];
+      var cur_y = y_mag[bin_idx];
+      var cur_n = n_mag[bin_idx];
+      var cur_x = cur_y - cur_n;
+        
+      var posterior_snr = (cur_y * cur_y) / (cur_n * cur_n);
+      var prior_snr = (cur_x * cur_x) / (cur_n * cur_n); 
+      var prior_snr = (PRIOR_ALPHA * prior_snr) + ((1 - PRIOR_ALPHA) * prev_snr[bin_idx]);
+
+      var tmp_term = (prior_snr * prior_snr) + ( (2 * (1 + prior_snr)) * (prior_snr / posterior_snr));
+      var num = prior_snr + Math.sqrt(tmp_term);
+      var denom = 2 * (1 + prior_snr);
+      masks[bin_idx] = num / denom;
     }
 
     return masks;
@@ -247,6 +264,9 @@
   /* Public variables go here. */
   return {
     GetNoiseProfile: GetNoiseProfile,
-    RemoveNoiseGivenProfile: RemoveNoiseGivenProfile
+    RemoveNoiseGivenProfile: RemoveNoiseGivenProfile,
+
+    CalculateSNR: CalculateSNR,
+    GetMasks: GetMasks
   };
 });

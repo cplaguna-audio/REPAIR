@@ -97,6 +97,59 @@ define([
   }
 
   // Event handlers.
+  function PluginImageClicked(plugin_options_view, plugin_tab) {
+    var plugin_options_view = 0;
+    var plugin_tab = 0;
+    if(this.id === "declip_image") {
+      plugin_options_view = document.getElementById("declip_options_view");
+      plugin_tab = document.getElementById("declip_tab");
+    }
+    else if(this.id === "noise_removal_image") {
+      plugin_options_view = document.getElementById("noise_removal_options_view");
+      plugin_tab = document.getElementById("noise_removal_tab");
+    }
+    else if(this.id === "auto_eq_image") {
+      plugin_options_view = document.getElementById("auto_eq_options_view");
+      plugin_tab = document.getElementById("auto_eq_tab");
+    }
+
+    var should_set = plugin_options_view.style.display === "none";
+
+    var options_views = document.getElementsByClassName("options_view");
+    for(var idx = 0; idx < options_views.length; idx++) {
+      var options_view = options_views[idx];
+      options_view.style.display = "none";
+    }
+
+    var tabs = document.getElementsByClassName("tab");
+    for(var idx = 0; idx < tabs.length; idx++) {
+      var tab = tabs[idx];
+      tab.style.display = "none";
+    }
+
+    if(should_set) {
+      plugin_options_view.style.display = "block";
+      plugin_tab.style.display = "inline-block";
+    }
+  }
+
+  function ActivateClicked(plugin_string, activate_button) {
+
+    var should_activate = activate_button.firstChild.data === "Activate";
+
+    if(plugin_string === "declip") {
+      IndexGlobal.STATE.declip_active = should_activate;
+    }
+    else if(plugin_string === "noise_removal") {
+      IndexGlobal.STATE.noise_removal_active = should_activate;
+    }
+    else if(plugin_string === "auto_eq") {
+      IndexGlobal.STATE.auto_eq_active = should_activate;
+    }
+
+    RefreshIndex();
+  }
+
   function LoadExampleClicked() {
     var blob = null;
     var xhr = new XMLHttpRequest(); 
@@ -108,6 +161,7 @@ define([
 
       var reader = new FileReader();
       reader.onload = function(ev) {
+        FlushIndex();
         IndexGlobal.AUDIO_CONTEXT.decodeAudioData(ev.target.result, function(buffer) {
           IndexGlobal.INPUT_AUDIO_BUFFER = buffer;
           IndexGlobal.PROCESSED_AUDIO_BUFFER = WebAudioUtils.CopyAudioBuffer(IndexGlobal.AUDIO_CONTEXT, IndexGlobal.INPUT_AUDIO_BUFFER);
@@ -125,6 +179,39 @@ define([
     xhr.send();
   }
 
+  function RepairClicked() {
+    if(IndexGlobal.STATE.declip_active) {
+      action_queue.push(DoDeclipShortBursts);
+      action_queue.push(DoGetKnownPoints);
+      action_queue.push(DoDeclipLongBursts);
+    }
+    if(IndexGlobal.STATE.noise_removal_active) {
+      action_queue.push(DoNoiseRemoval);
+    }
+    if(IndexGlobal.STATE.auto_eq_active) {
+      // action_queue.push(DoAutoEq);
+    }
+    action_queue.push(DoNormalizeInput);
+    action_queue.push(DoNormalizeOutput);
+
+    DoFirstAction();
+  }
+
+  function NoiseProfileClicked() {
+    var noise_bounds = IndexGlobal.WAVEFORM_INTERACTOR.GetOriginalRegionBounds();
+    if(noise_bounds.start === -1) {
+      alert("Please select a section of the input audio file to be used as the noise profile.");
+      return;
+    }
+    var sample_rate = IndexGlobal.AUDIO_CONTEXT.sampleRate;
+
+    IndexGlobal.NOISE_REGION_START = Math.floor(noise_bounds.start * sample_rate);
+    IndexGlobal.NOISE_REGION_STOP = Math.floor(noise_bounds.end * sample_rate);
+    action_queue.push(DoNoiseProfile);
+    DoFirstAction();
+  }
+
+/*
   function DeclipClicked() {
     action_queue.push(DoDeclipShortBursts);
     action_queue.push(DoGetKnownPoints);
@@ -134,10 +221,7 @@ define([
     DoFirstAction();
   }
 
-  function NoiseProfileClicked() {
-    action_queue.push(DoNoiseProfile);
-    DoFirstAction();
-  }
+
 
   function RemoveNoiseClicked() {
     action_queue.push(DoNoiseRemoval);
@@ -145,6 +229,7 @@ define([
     action_queue.push(DoNormalizeOutput);
     DoFirstAction();
   }
+  */
 
   function SaveOutputClicked() {
     var wav_blob = WavEncoder.AudioBufferToWavBlob(IndexGlobal.PROCESSED_AUDIO_BUFFER); 
@@ -350,10 +435,28 @@ define([
 
     // Add the click handlers.
     $("#load_example").click(function() { LoadExampleClicked(); });
-    $("#declip_button").click(function() { DeclipClicked(); });
-    $("#noise_removal_button").click(function() { RemoveNoiseClicked(); });
+    $("#repair_button").click(function() { RepairClicked(); });
     $("#noise_profile_button").click(function() { NoiseProfileClicked(); });
     $("#download_audio_button").click(function() { SaveOutputClicked(); });
+
+    $("#declip_activate_button").click(function() {
+      var activate_button = document.getElementById("declip_activate_button");
+      ActivateClicked("declip", activate_button); 
+    });
+    $("#noise_removal_activate_button").click(function() {
+      var activate_button = document.getElementById("noise_removal_activate_button");
+      ActivateClicked("noise_removal", activate_button); 
+    });
+    $("#auto_eq_activate_button").click(function() {
+      var activate_button = document.getElementById("auto_eq_activate_button");
+      ActivateClicked("auto_eq", activate_button); 
+    });
+
+    var options_views = document.getElementsByClassName("options_view");
+    for(var idx = 0; idx < options_views.length; idx++) {
+      var options_view = options_views[idx];
+      options_view.style.display = "none";
+    }
 
     // Construct the web workers.
     if (window.Worker) {
@@ -406,6 +509,7 @@ define([
 
               var reader = new FileReader();
               reader.onload = function(ev) {
+                FlushIndex();
                 IndexGlobal.AUDIO_CONTEXT.decodeAudioData(ev.target.result, function(buffer) {
                   IndexGlobal.INPUT_AUDIO_BUFFER = buffer;
                   IndexGlobal.PROCESSED_AUDIO_BUFFER = WebAudioUtils.CopyAudioBuffer(IndexGlobal.AUDIO_CONTEXT, IndexGlobal.INPUT_AUDIO_BUFFER);
@@ -635,7 +739,6 @@ define([
 
   function DoNoiseProfile() {
     if(IndexGlobal.STATE.audio_loaded) {
-
       console.time('GetNoiseProfile');
       var num_channels = IndexGlobal.INPUT_AUDIO_BUFFER.numberOfChannels;
       IndexGlobal.NOISE_PROFILE = [];
@@ -649,7 +752,7 @@ define([
       if (window.Worker) {
         for(channel_idx = 0; channel_idx < num_channels; channel_idx++) {
           params = [IndexGlobal.INPUT_AUDIO_BUFFER.sampleRate, IndexGlobal.BLOCK_SIZE, IndexGlobal.HOP_SIZE];
-          NOISE_PROFILE_WORKERS[channel_idx].postMessage([channel_idx, IndexGlobal.INPUT_AUDIO_BUFFER.getChannelData(channel_idx), params]);
+          NOISE_PROFILE_WORKERS[channel_idx].postMessage([channel_idx, IndexGlobal.INPUT_AUDIO_BUFFER.getChannelData(channel_idx), IndexGlobal.NOISE_REGION_START, IndexGlobal.NOISE_REGION_STOP, params]);
         }
       }
     }
@@ -658,8 +761,25 @@ define([
     }
   }
 
+  /*
+   * Assorted Helpers
+   */
+  function NoPluginsActive() {
+    if(IndexGlobal.STATE.declip_active) {
+      return true;
+    }
+    if(IndexGlobal.STATE.noise_removal_active) {
+      return true;
+    }
+    if(IndexGlobal.STATE.auto_eq_active) {
+      return true;
+    }
+
+    return false;
+  }
+
   /* 
-   ********** Progress Bar Functions ***********
+   * Progress Bar Functions
    */
   function OpenProgressBar() {
     IndexGlobal.PROGRESS_BAR_JQUERRY_ELEMENT.w2popup({showClose: false, modal:true});
@@ -730,11 +850,15 @@ define([
       zoom_out_button.addEventListener('click', ZoomOutHandler);
       zoom_out_button.style.opacity = "1";
 
-      var processing_buttons = document.getElementsByClassName("processing_button");
-      for(var i = 0; i < processing_buttons.length; i++) {
-        processing_buttons[i].style.opacity = "1";
-        processing_buttons[i].disabled = false;
-      } 
+      var repair_button = document.getElementById("repair_button");
+      if(NoPluginsActive()) {
+        repair_button.style.opacity = "1";
+        repair_button.disabled = false;
+      }
+      else {
+        repair_button.style.opacity = "0.2";
+        repair_button.disabled = true;
+      }
 
       IndexGlobal.WAVEFORM_INTERACTOR.original_audio_element.addEventListener('click', function() {
         if(!IndexGlobal.WAVEFORM_INTERACTOR.original_on) {
@@ -747,6 +871,25 @@ define([
           IndexGlobal.WAVEFORM_INTERACTOR.TurnOnProcessed();
         }
       })
+
+      var plugin_images = document.getElementsByClassName("plugin_image");
+      for(var i = 0; i < plugin_images.length; i++)
+      {
+        var plugin_image = plugin_images[i];
+        plugin_image.removeEventListener('click', PluginImageClicked);
+        plugin_image.addEventListener('click', PluginImageClicked);
+        plugin_image.style.opacity = "1";
+      }
+
+      var noise_removal_activate_button = document.getElementById("noise_removal_activate_button");
+      if(IndexGlobal.STATE.did_profile_noise) {
+        noise_removal_activate_button.style.opacity = "1";
+        noise_removal_activate_button.disabled = false;
+      }
+      else {
+        noise_removal_activate_button.style.opacity = "0.2";
+        noise_removal_activate_button.disabled = true;
+      }
     }
     else {
       IndexGlobal.WAVEFORM_INTERACTOR.DisableInteraction();
@@ -773,6 +916,48 @@ define([
         processing_buttons[i].style.opacity = "0.2";
         processing_buttons[i].disabled = true;
       } 
+
+      var plugin_images = document.getElementsByClassName("plugin_image");
+      for(var i = 0; i < plugin_images.length; i++)
+      {
+        var plugin_image = plugin_images[i];
+        plugin_image.removeEventListener('click', PluginImageClicked);
+        plugin_image.style.opacity = "0.2";
+      }
+    }
+
+    // Plugin activations.
+    var declip_activate_button = document.getElementById("declip_activate_button");
+    var declip_img = document.getElementById("declip_image");
+    if(IndexGlobal.STATE.declip_active) {
+      declip_img.src = "resources/DeclipIconOn.png";
+      declip_activate_button.firstChild.data = "Deactivate";
+    }
+    else {
+      declip_img.src = "resources/DeclipIconOff.png";
+      declip_activate_button.firstChild.data = "Activate";
+    }
+
+    var noise_removal_activate_button = document.getElementById("noise_removal_activate_button");
+    var noise_removal_div = document.getElementById("noise_removal_image");
+    if(IndexGlobal.STATE.noise_removal_active) {
+      noise_removal_div.src = "resources/RemoveNoiseIconOn.png";
+      noise_removal_activate_button.firstChild.data = "Deactivate";
+    }
+    else {
+      noise_removal_div.src = "resources/RemoveNoiseIconOff.png";
+      noise_removal_activate_button.firstChild.data = "Activate";
+    }
+
+    var auto_eq_activate_button = document.getElementById("auto_eq_activate_button");
+    var auto_eq_img = document.getElementById("auto_eq_image");
+    if(IndexGlobal.STATE.auto_eq_active) {
+      auto_eq_img.src = "resources/AutoEQIconOn.png";
+      auto_eq_activate_button.firstChild.data = "Deactivate";
+    }
+    else {
+      auto_eq_img.src = "resources/AutoEQIconOff.png";
+      auto_eq_activate_button.firstChild.data = "Activate";
     }
   }
 
@@ -784,6 +969,9 @@ define([
     IndexGlobal.SHORT_CLIP_INTERVALS = [];
     IndexGlobal.LONG_CLIP_INTERVALS = [];
     IndexGlobal.PROCESSED_AUDIO_BUFFER = [];
+    IndexGlobal.NOISE_PROFILE = [];
+    IndexGlobal.NOISE_REGION_START = -1;
+    IndexGlobal.NOISE_REGION_STOP = -1;
   }
 
   function FlushState() {
@@ -793,6 +981,10 @@ define([
     IndexGlobal.STATE.did_declip_long_bursts = false;
     IndexGlobal.STATE.did_profile_noise = false;
     IndexGlobal.STATE.did_remove_noise = false;
+
+    IndexGlobal.STATE.declip_active = false;
+    IndexGlobal.STATE.noise_removal_active = false;
+    IndexGlobal.STATE.auto_eq_active = false;
   }
 
   function ShouldAllowWaveformInteraction() {

@@ -34,16 +34,20 @@ require({
         baseUrl: '../'
     }, [
       /* Includes go here. */
+      'modules/signal_processing/Blocking',
       'modules/signal_processing/FFTWrapper',
       'modules/noise_removal/NoiseRemoval'
-    ], function(FFTWrapper,
+    ], function(Blocking,
+                FFTWrapper,
                 NoiseRemoval) {
 
   /*
    *  Input:
    *    e.data[0]: channel index
    *    e.data[1]: input audio buffer - user-selected noise segment of audio file (Float32Array)
-   *    e.data[2]: params
+   *    e.data[2]: noise region start - start index of the region of the input file containing noise.
+   *    e.data[3]: noise region stop - stop index of the region of the input audio file containing noise.
+   *    e.data[4]: params
    *      params[0]: sample rate
    *      params[1]: block size
    *      params[2]: hop size
@@ -57,11 +61,18 @@ require({
   onmessage = function(e) {
     var channel_idx = e.data[0];
     var audio_buffer = e.data[1];
-    var params = e.data[2];
+    var start_idx = e.data[2];
+    var stop_idx = e.data[3];
+    var params = e.data[4];
     var block_size = params[1];
 
+    var noise_length = stop_idx - start_idx + 1;
+    var noise_audio = new Float32Array(noise_length);
+    Blocking.CopyToBlock(audio_buffer, audio_buffer.length, start_idx, stop_idx, noise_audio, noise_audio.length);
+
+
     FFTWrapper.InitFFTWrapper(block_size);
-    var noise_profile = NoiseRemoval.GetNoiseProfile(audio_buffer, channel_idx, params, false);
+    var noise_profile = NoiseRemoval.GetNoiseProfile(noise_audio, channel_idx, params, false);
 
     postMessage([1.1, channel_idx, noise_profile]);
   }
