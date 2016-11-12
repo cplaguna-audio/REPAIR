@@ -39,6 +39,7 @@ define([
     'WebAudioUtils',
 
     'modules/codecs/WavEncoder',
+    'modules/perceptual_eq/PerceptualEq',
     'modules/signal_processing/SignalProcessing',
     'modules/test/Test',
 
@@ -53,7 +54,9 @@ define([
   ], function(IndexGlobal,
               WaveformInteractor,
               WebAudioUtils,
+
               WavEncoder,
+              PerceptualEq,
               SignalProcessing,
               Test) {
 
@@ -150,10 +153,68 @@ define([
     RefreshIndex();
   }
 
-  function LoadExampleClicked() {
+  function ClippingExampleClicked() {
     var blob = null;
     var xhr = new XMLHttpRequest(); 
     xhr.open("GET", "resources/audio_examples/1/1_clipped.wav"); 
+    xhr.responseType = "blob";
+    xhr.onload = function() {
+      blob = xhr.response;
+      IndexGlobal.FILE_NAME = "clipping_example.wav";
+
+      var reader = new FileReader();
+      reader.onload = function(ev) {
+        FlushIndex();
+        IndexGlobal.AUDIO_CONTEXT.decodeAudioData(ev.target.result, function(buffer) {
+          IndexGlobal.INPUT_AUDIO_BUFFER = buffer;
+          IndexGlobal.PROCESSED_AUDIO_BUFFER = WebAudioUtils.CopyAudioBuffer(IndexGlobal.AUDIO_CONTEXT, IndexGlobal.INPUT_AUDIO_BUFFER);
+          IndexGlobal.STATE.audio_loaded = true;
+          action_queue.push(DoDetectClipping);
+          action_queue.push(DoNormalizeInput);
+          action_queue.push(DoNormalizeOutput);
+          DoFirstAction();
+        });
+      };
+      reader.readAsArrayBuffer(blob);
+      IndexGlobal.WAVEFORM_INTERACTOR.LoadAudio(blob);
+      RefreshIndex();
+    }
+    xhr.send();
+  }
+
+  function NoisyExampleClicked() {
+    var blob = null;
+    var xhr = new XMLHttpRequest(); 
+    xhr.open("GET", "resources/audio_examples/noise_removal/noisy_example.wav"); 
+    xhr.responseType = "blob";
+    xhr.onload = function() {
+      blob = xhr.response;
+      IndexGlobal.FILE_NAME = "clipping_example.wav";
+
+      var reader = new FileReader();
+      reader.onload = function(ev) {
+        FlushIndex();
+        IndexGlobal.AUDIO_CONTEXT.decodeAudioData(ev.target.result, function(buffer) {
+          IndexGlobal.INPUT_AUDIO_BUFFER = buffer;
+          IndexGlobal.PROCESSED_AUDIO_BUFFER = WebAudioUtils.CopyAudioBuffer(IndexGlobal.AUDIO_CONTEXT, IndexGlobal.INPUT_AUDIO_BUFFER);
+          IndexGlobal.STATE.audio_loaded = true;
+          action_queue.push(DoDetectClipping);
+          action_queue.push(DoNormalizeInput);
+          action_queue.push(DoNormalizeOutput);
+          DoFirstAction();
+        });
+      };
+      reader.readAsArrayBuffer(blob);
+      IndexGlobal.WAVEFORM_INTERACTOR.LoadAudio(blob);
+      RefreshIndex();
+    }
+    xhr.send();
+  }
+
+function EQExampleClicked() {
+    var blob = null;
+    var xhr = new XMLHttpRequest(); 
+    xhr.open("GET", "resources/audio_examples/perceptual_eq/eq_example.wav"); 
     xhr.responseType = "blob";
     xhr.onload = function() {
       blob = xhr.response;
@@ -189,7 +250,7 @@ define([
       action_queue.push(DoNoiseRemoval);
     }
     if(IndexGlobal.STATE.auto_eq_active) {
-      // action_queue.push(DoAutoEq);
+      action_queue.push(DoPerceptualEq);
     }
     action_queue.push(DoNormalizeInput);
     action_queue.push(DoNormalizeOutput);
@@ -210,26 +271,6 @@ define([
     action_queue.push(DoNoiseProfile);
     DoFirstAction();
   }
-
-/*
-  function DeclipClicked() {
-    action_queue.push(DoDeclipShortBursts);
-    action_queue.push(DoGetKnownPoints);
-    action_queue.push(DoDeclipLongBursts);
-    action_queue.push(DoNormalizeInput);
-    action_queue.push(DoNormalizeOutput);
-    DoFirstAction();
-  }
-
-
-
-  function RemoveNoiseClicked() {
-    action_queue.push(DoNoiseRemoval);
-    action_queue.push(DoNormalizeInput);
-    action_queue.push(DoNormalizeOutput);
-    DoFirstAction();
-  }
-  */
 
   function SaveOutputClicked() {
     var wav_blob = WavEncoder.AudioBufferToWavBlob(IndexGlobal.PROCESSED_AUDIO_BUFFER); 
@@ -429,12 +470,22 @@ define([
       UpdateProgressBar(avg_progress);
     }
   }
+
+  function PerceptualEqCallback(e) {
+    UpdateProgressBar(1.1);
+    IndexGlobal.PROCESSED_AUDIO_BUFFER = e.renderedBuffer;
+    RefreshIndex();
+    DoNextAction();
+  }
  
   // Called after the <body> has been loaded.
   function InitIndex() {  
 
     // Add the click handlers.
-    $("#load_example").click(function() { LoadExampleClicked(); });
+    $("#clipping_example").click(function() { ClippingExampleClicked(); });
+    $("#noisy_example").click(function() { NoisyExampleClicked(); });
+    $("#eq_example").click(function() { EQExampleClicked(); });
+
     $("#repair_button").click(function() { RepairClicked(); });
     $("#noise_profile_button").click(function() { NoiseProfileClicked(); });
     $("#download_audio_button").click(function() { SaveOutputClicked(); });
@@ -489,6 +540,7 @@ define([
         noise_profile_worker.onmessage = NoiseProfileCallback;
         NOISE_PROFILE_WORKERS.push(noise_profile_worker);
       }
+
     }
 
     // Drag and drop.
@@ -609,7 +661,7 @@ define([
       }
 
       // Start the audio processing on a separate thread.
-      if (window.Worker) {
+      if(window.Worker) {
         for(channel_idx = 0; channel_idx < num_channels; channel_idx++) {
           params = [gain_linear];
           GAIN_WORKERS[channel_idx].postMessage([channel_idx, audio_buffer.getChannelData(channel_idx), params, do_input_buffer]);
@@ -633,7 +685,7 @@ define([
     }
 
     // Start the audio processing on a separate thread.
-    if (window.Worker) {
+    if(window.Worker) {
       for(channel_idx = 0; channel_idx < num_channels; channel_idx++) {
         params = [IndexGlobal.INPUT_AUDIO_BUFFER.sampleRate];
         DECLIP_SHORT_BURSTS_WORKERS[channel_idx].postMessage([channel_idx, IndexGlobal.INPUT_AUDIO_BUFFER.getChannelData(channel_idx), IndexGlobal.SHORT_CLIP_INTERVALS[channel_idx], params]);
@@ -659,9 +711,9 @@ define([
     }
 
     // Start the audio processing on a separate thread.
-    if (window.Worker) {
+    if(window.Worker) {
       for(channel_idx = 0; channel_idx < num_channels; channel_idx++) {
-        params = [IndexGlobal.INPUT_AUDIO_BUFFER.sampleRate, IndexGlobal.BLOCK_SIZE, IndexGlobal.HOP_SIZE, IndexGlobal.MIN_FFT_LENGTH];
+        params = [IndexGlobal.INPUT_AUDIO_BUFFER.sampleRate, IndexGlobal.DECLIP_BLOCK_SIZE, IndexGlobal.DECLIP_HOP_SIZE, IndexGlobal.MIN_FFT_LENGTH];
         GET_KNOWN_POINTS_WORKERS[channel_idx].postMessage([channel_idx, IndexGlobal.PROCESSED_AUDIO_BUFFER.getChannelData(channel_idx), IndexGlobal.LONG_CLIP_INTERVALS[channel_idx], params]);
       }
     }
@@ -679,9 +731,9 @@ define([
       PROGRESS[channel_idx] = 0;
     }
 
-    if (window.Worker) {
+    if(window.Worker) {
       for(channel_idx = 0; channel_idx < num_channels; channel_idx++) {
-        params = [IndexGlobal.INPUT_AUDIO_BUFFER.sampleRate, IndexGlobal.BLOCK_SIZE, IndexGlobal.HOP_SIZE];
+        params = [IndexGlobal.INPUT_AUDIO_BUFFER.sampleRate, IndexGlobal.DECLIP_BLOCK_SIZE, IndexGlobal.DECLIP_HOP_SIZE];
         DECLIP_LONG_BURSTS_WORKERS[channel_idx].postMessage([channel_idx, IndexGlobal.PROCESSED_AUDIO_BUFFER.getChannelData(channel_idx), IndexGlobal.LONG_CLIP_INTERVALS[channel_idx], KNOWN_POINTS[channel_idx], params]);
       }
     }  
@@ -702,7 +754,7 @@ define([
       }
 
       ResetProgressBar("Detect Clipping");
-      if (window.Worker) {
+      if(window.Worker) {
         for(channel_idx = 0; channel_idx < num_channels; channel_idx++) {
           params = [IndexGlobal.INPUT_AUDIO_BUFFER.sampleRate];
           CLIPPING_DETECTION_WORKERS[channel_idx].postMessage([channel_idx, IndexGlobal.INPUT_AUDIO_BUFFER.getChannelData(channel_idx), params]);
@@ -725,9 +777,9 @@ define([
       }
 
       ResetProgressBar('Noise Removal');
-      if (window.Worker) {
+      if(window.Worker) {
         for(channel_idx = 0; channel_idx < num_channels; channel_idx++) {
-          params = [IndexGlobal.INPUT_AUDIO_BUFFER.sampleRate, IndexGlobal.BLOCK_SIZE, IndexGlobal.HOP_SIZE];
+          params = [IndexGlobal.INPUT_AUDIO_BUFFER.sampleRate, IndexGlobal.NOISE_REMOVAL_BLOCK_SIZE, IndexGlobal.NOISE_REMOVAL_HOP_SIZE];
           NOISE_REMOVAL_WORKERS[channel_idx].postMessage([channel_idx, IndexGlobal.INPUT_AUDIO_BUFFER.getChannelData(channel_idx), IndexGlobal.NOISE_PROFILE[channel_idx], params]);
         }
       }
@@ -749,9 +801,9 @@ define([
       }
 
       ResetProgressBar('Get Noise Profile');
-      if (window.Worker) {
+      if(window.Worker) {
         for(channel_idx = 0; channel_idx < num_channels; channel_idx++) {
-          params = [IndexGlobal.INPUT_AUDIO_BUFFER.sampleRate, IndexGlobal.BLOCK_SIZE, IndexGlobal.HOP_SIZE];
+          params = [IndexGlobal.INPUT_AUDIO_BUFFER.sampleRate, IndexGlobal.NOISE_REMOVAL_BLOCK_SIZE, IndexGlobal.NOISE_REMOVAL_HOP_SIZE];
           NOISE_PROFILE_WORKERS[channel_idx].postMessage([channel_idx, IndexGlobal.INPUT_AUDIO_BUFFER.getChannelData(channel_idx), IndexGlobal.NOISE_REGION_START, IndexGlobal.NOISE_REGION_STOP, params]);
         }
       }
@@ -761,9 +813,37 @@ define([
     }
   }
 
+  function DoPerceptualEq() {
+    if(IndexGlobal.STATE.audio_loaded) {
+      console.time('PerceptualEq');
+      PROGRESS = [];
+      for(var channel_idx = 0; channel_idx < PROGRESS.length; channel_idx++) {
+        PROGRESS[channel_idx] = 0;
+      }
+
+      ResetProgressBar('Applying Perceptual Equalation');
+      var warmth = GetWarmth();
+      var brightness = GetBrightness();
+      PerceptualEq.ApplyPerceptualEq(IndexGlobal.INPUT_AUDIO_BUFFER, warmth, brightness, PerceptualEqCallback);
+    }
+    else {
+      alert("Load an audio file first.");
+    }
+  }
+
   /*
    * Assorted Helpers
    */
+  function GetWarmth() {
+    var warmth_slider = document.getElementById('warmth_slider');
+    return warmth_slider.value;
+  }
+
+  function GetBrightness() {
+    var brightness_slider = document.getElementById('brightness_slider');
+    return brightness_slider.value;
+  }
+
   function NoPluginsActive() {
     if(IndexGlobal.STATE.declip_active) {
       return true;

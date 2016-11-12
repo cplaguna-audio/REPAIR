@@ -54,6 +54,8 @@ define([
 
   /* Public variables go here. */
   return {
-      CopyAudioBuffer: CopyAudioBuffer
+      CopyAudioBuffer: CopyAudioBuffer,
   };
+
+
 });

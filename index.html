@@ -9,7 +9,6 @@
   <link rel="stylesheet" type="text/css" href="css/index.css">
 
   <script src="js/third_party/requirejs/require.js" data-main="js/AppIndex"></script>
-
 </head>
 
 <body>
@@ -27,7 +26,9 @@
       <div id="original_waveform_container" >
         <div width="100%">
         <div id="file_name"></div>
-        <button id="load_example">Load Example</button>
+        <button id="clipping_example" class="load_example">Clipping Example</button>
+        <button id="noisy_example" class="load_example">Noisy Example</button>
+        <button id="eq_example" class="load_example">EQ Example</button>
         <div class="waveform_title">Input</div>   
         <div class="small_padding"></div>
         <div id="original_audio_waveform" class="wavesurfer"></div>
@@ -108,7 +109,22 @@
             The auto-equalizer explanation goes here.
           </div>
         </div>
-        <div class="parameters_view">
+        <div class="parameters_view" style="text-align: center;">
+          <table>
+            <tr>
+              <td>Warm</td>
+              <td>Bright</td>
+            </tr>
+            <tr>
+              <td><input type="range" min="0" max="100" value="50" id="warmth_slider" class="vertical_slider" orient="vertical"></input></td>
+              <td><input type="range" min="0" max="100" value="50" id="brightness_slider" class="vertical_slider" orient="vertical"></input></td>
+            </tr>
+            <tr>
+              <td>Thin</td>
+              <td>Dark</td>
+            </tr>
+          </table>
+          
         </div>
         <div class="activate_view">
           <button id="auto_eq_activate_button" class="activate_button">Activate</button>
