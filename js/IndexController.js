@@ -39,7 +39,9 @@ define([
     'WebAudioUtils',
 
     'modules/codecs/WavEncoder',
+    'modules/noise_removal/NoiseRemoval',
     'modules/perceptual_eq/PerceptualEq',
+    'modules/signal_processing/Blocking',
     'modules/signal_processing/SignalProcessing',
     'modules/test/Test',
 
@@ -56,7 +58,9 @@ define([
               WebAudioUtils,
 
               WavEncoder,
+              NoiseRemoval,
               PerceptualEq,
+              Blocking,
               SignalProcessing,
               Test) {
 
@@ -266,8 +270,27 @@ function EQExampleClicked() {
     }
     var sample_rate = IndexGlobal.AUDIO_CONTEXT.sampleRate;
 
-    IndexGlobal.NOISE_REGION_START = Math.floor(noise_bounds.start * sample_rate);
-    IndexGlobal.NOISE_REGION_STOP = Math.floor(noise_bounds.end * sample_rate);
+    var noise_profile_interval = { start: noise_bounds.start, stop: noise_bounds.end };
+    IndexGlobal.NOISE_PROFILE_INTERVALS = [noise_profile_interval];
+
+    IndexGlobal.WAVEFORM_INTERACTOR.UpdateNoiseProfileRegions(IndexGlobal.NOISE_PROFILE_INTERVALS);
+
+    action_queue.push(DoNoiseProfile);
+    DoFirstAction();
+  }
+
+  function UpdateNoiseProfileIntervals(threshold_percentage) {
+    var hop_size = IndexGlobal.NOISE_REMOVAL_BLOCK_SIZE;
+    var block_size = IndexGlobal.NOISE_REMOVAL_HOP_SIZE;
+    var sample_rate = IndexGlobal.AUDIO_CONTEXT.sampleRate;
+
+    var mono_channel = WebAudioUtils.AudioBufferToMono(IndexGlobal.INPUT_AUDIO_BUFFER);
+    var signal_max = Math.abs(SignalProcessing.MyMax(mono_channel));
+    var threshold_amplitude = signal_max * threshold_percentage / 100;
+    IndexGlobal.NOISE_PROFILE_INTERVALS = NoiseRemoval.RMSThreshold(mono_channel, threshold_amplitude, block_size, hop_size);
+    IndexGlobal.NOISE_PROFILE_INTERVALS = Blocking.IntervalsBlockIdxToSeconds(IndexGlobal.NOISE_PROFILE_INTERVALS, hop_size, sample_rate);
+    IndexGlobal.WAVEFORM_INTERACTOR.UpdateNoiseProfileRegions(IndexGlobal.NOISE_PROFILE_INTERVALS);
+
     action_queue.push(DoNoiseProfile);
     DoFirstAction();
   }
@@ -477,7 +500,7 @@ function EQExampleClicked() {
     RefreshIndex();
     DoNextAction();
   }
- 
+
   // Called after the <body> has been loaded.
   function InitIndex() {  
 
@@ -489,6 +512,16 @@ function EQExampleClicked() {
     $("#repair_button").click(function() { RepairClicked(); });
     $("#noise_profile_button").click(function() { NoiseProfileClicked(); });
     $("#download_audio_button").click(function() { SaveOutputClicked(); });
+
+
+    var noise_threshold_slider = $("#noise_threshold_slider");
+    var noise_threshold_display = $("#noise_threshold_display");
+    noise_threshold_display.html(noise_threshold_slider[0].value.toString() + "%");
+    noise_threshold_slider.change(function() { 
+        var threshold_percentage = noise_threshold_slider[0].value;
+        UpdateNoiseProfileIntervals(threshold_percentage);
+        noise_threshold_display.html(threshold_percentage.toString() + "%");
+    });
 
     $("#declip_activate_button").click(function() {
       var activate_button = document.getElementById("declip_activate_button");
@@ -804,7 +837,7 @@ function EQExampleClicked() {
       if(window.Worker) {
         for(channel_idx = 0; channel_idx < num_channels; channel_idx++) {
           params = [IndexGlobal.INPUT_AUDIO_BUFFER.sampleRate, IndexGlobal.NOISE_REMOVAL_BLOCK_SIZE, IndexGlobal.NOISE_REMOVAL_HOP_SIZE];
-          NOISE_PROFILE_WORKERS[channel_idx].postMessage([channel_idx, IndexGlobal.INPUT_AUDIO_BUFFER.getChannelData(channel_idx), IndexGlobal.NOISE_REGION_START, IndexGlobal.NOISE_REGION_STOP, params]);
+          NOISE_PROFILE_WORKERS[channel_idx].postMessage([channel_idx, IndexGlobal.INPUT_AUDIO_BUFFER.getChannelData(channel_idx), IndexGlobal.NOISE_PROFILE_INTERVALS, params]);
         }
       }
     }
@@ -1050,8 +1083,7 @@ function EQExampleClicked() {
     IndexGlobal.LONG_CLIP_INTERVALS = [];
     IndexGlobal.PROCESSED_AUDIO_BUFFER = [];
     IndexGlobal.NOISE_PROFILE = [];
-    IndexGlobal.NOISE_REGION_START = -1;
-    IndexGlobal.NOISE_REGION_STOP = -1;
+    IndexGlobal.NOISE_PROFILE_INTERVALS = [];
   }
 
   function FlushState() {

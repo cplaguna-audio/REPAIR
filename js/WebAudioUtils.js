@@ -33,7 +33,8 @@
 
 define([
     /* Includes go here. */
-  ], function() {
+    'modules/signal_processing/SignalProcessing'
+  ], function(SignalProcessing) {
 
   function CopyAudioBuffer(audio_context, audio_buffer) {
     var num_channels = audio_buffer.numberOfChannels;
@@ -52,9 +53,34 @@ define([
     return buffer_copy;
   }
 
+  // Average all channels.
+  function AudioBufferToMono(audio_buffer) {
+    var num_channels = audio_buffer.numberOfChannels;
+    if(num_channels == 0) {
+      return [];
+    }
+
+    var mono_channel = audio_buffer.getChannelData(0);
+    var num_items = 2;
+    for(var channel_idx = 1; channel_idx < num_channels; channel_idx++) {
+      var mono_scale_factor = (num_items - 1) / num_items;
+      mono_channel = SignalProcessing.SignalScale(mono_channel, mono_scale_factor);
+
+      var next_channel = audio_buffer.getChannelData(channel_idx);
+      var next_channel_scale_factor = 1 / num_items;
+      next_channel = SignalProcessing.SignalScale(next_channel, next_channel_scale_factor);
+
+      mono_channel = SignalProcessing.SignalAdd(mono_channel, next_channel);
+      num_items = num_items + 1;
+    }
+
+    return mono_channel;
+  }
+
   /* Public variables go here. */
   return {
       CopyAudioBuffer: CopyAudioBuffer,
+      AudioBufferToMono: AudioBufferToMono
   };
 
 

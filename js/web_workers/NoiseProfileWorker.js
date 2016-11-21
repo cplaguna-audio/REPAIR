@@ -45,9 +45,8 @@ require({
    *  Input:
    *    e.data[0]: channel index
    *    e.data[1]: input audio buffer - user-selected noise segment of audio file (Float32Array)
-   *    e.data[2]: noise region start - start index of the region of the input file containing noise.
-   *    e.data[3]: noise region stop - stop index of the region of the input audio file containing noise.
-   *    e.data[4]: params
+   *    e.data[2]: noise profile intervals - array of intervals: interval.start, interval.stop.
+   *    e.data[3]: params
    *      params[0]: sample rate
    *      params[1]: block size
    *      params[2]: hop size
@@ -61,14 +60,13 @@ require({
   onmessage = function(e) {
     var channel_idx = e.data[0];
     var audio_buffer = e.data[1];
-    var start_idx = e.data[2];
-    var stop_idx = e.data[3];
-    var params = e.data[4];
+    var noise_profile_intervals = e.data[2];
+    var params = e.data[3];
+    var sample_rate = params[0];
     var block_size = params[1];
 
-    var noise_length = stop_idx - start_idx + 1;
-    var noise_audio = new Float32Array(noise_length);
-    Blocking.CopyToBlock(audio_buffer, audio_buffer.length, start_idx, stop_idx, noise_audio, noise_audio.length);
+
+    var noise_audio = Blocking.ConcatenateIntervals(audio_buffer, noise_profile_intervals, sample_rate);
 
 
     FFTWrapper.InitFFTWrapper(block_size);

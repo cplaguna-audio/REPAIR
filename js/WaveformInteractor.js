@@ -58,6 +58,7 @@ define([
 
     this.original_region = null;
     this.processed_region = null;
+    this.noise_profile_regions = [];
     this.is_playing = false;
 
     this.disabled = false;
@@ -202,6 +203,11 @@ define([
       this.original_wavesurfer.on('region-created', function(the_region) {
         if(me.VERBOSE) {
           console.log('og region-created');
+        }
+
+        // Ignore the noise_profile regions, which cannot be dragged.
+        if(!the_region.drag) {
+          return;
         }
 
         me.Pause();
@@ -572,6 +578,24 @@ define([
       if(this.processed_region !== null) {
         this.processed_region.remove();
         this.processed_region = null;
+      }
+    }
+
+    this.ClearNoiseProfileRegions = function() {
+      for(var region_idx = 0; region_idx < this.noise_profile_regions.length; region_idx++) {
+        var region = this.noise_profile_regions[region_idx];
+        region.remove();
+      }
+      this.noise_profile_regions.length = 0;
+    }
+
+    this.UpdateNoiseProfileRegions = function(noise_profile_intervals) {
+      this.ClearNoiseProfileRegions();
+
+      for(var region_idx = 0; region_idx < noise_profile_intervals.length; region_idx++) {
+        var cur_interval = noise_profile_intervals[region_idx];
+        var new_region = this.original_wavesurfer.addRegion({start: cur_interval.start, end: cur_interval.stop, drag: false, color:"rgba(100, 0, 0, 0.1)"});
+        this.noise_profile_regions.push(new_region);
       }
     }
 

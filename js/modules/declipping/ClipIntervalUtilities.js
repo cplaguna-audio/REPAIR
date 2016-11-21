@@ -389,6 +389,50 @@
     return clip_segments;
   }
 
+  function FlagsToIntervals(flags) {
+    var in_interval = false;
+    var start_idx = -1;
+    var stop_idx = -1;
+
+    var intervals = [];
+
+    for(var flag_idx = 0; flag_idx < flags.length; flag_idx++) {
+      var flag = flags[flag_idx];
+
+      if(in_interval) {
+        // We just passed the end of an interval.
+        if(flag == 0) {
+          stop_idx = flag_idx;
+          var interval = {start: start_idx, stop: stop_idx};
+          intervals.push(interval);
+
+          in_interval = false;
+
+          // For sanity.
+          start_idx = -1;
+          stop_idx = -1;
+        }
+      }
+      else {
+        // The beginning of a new interval.
+        if(flag == 1) {
+          start_idx = flag_idx;
+          in_interval = true;
+        }
+      }
+    }
+
+    // The case where the final sample in |flags| is inside the interval.
+    if(in_interval) {
+      stop_idx = flags.length - 1;
+      var interval = {start: start_idx, stop: stop_idx};
+      intervals.push(interval);
+      in_interval = false;
+    }
+
+    return intervals;
+  }
+
   /* Public variables go here. */
   return {
     SplitClipIntervals: SplitClipIntervals,
@@ -402,6 +446,7 @@
     SortIntervalsByStart: SortIntervalsByStart,
     RangeToIndices: RangeToIndices,
     AreOverlapping: AreOverlapping,
-    GetClipSegments: GetClipSegments
+    GetClipSegments: GetClipSegments, 
+    FlagsToIntervals: FlagsToIntervals
   };
 });

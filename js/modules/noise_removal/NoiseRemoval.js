@@ -32,12 +32,49 @@
 
  define([
     /* Includes go here. */
+    'modules/declipping/ClipIntervalUtilities',
     'modules/signal_processing/Blocking',
     'modules/signal_processing/FFTWrapper',
     'modules/signal_processing/SignalProcessing'
-  ], function(Blocking,
+  ], function(ClipIntervalUtilities,
+              Blocking,
               FFTWrapper,
               SignalProcessing) {
+
+  function RMSThreshold(x, threshold_amplitude, block_size, hop_size) {
+    var channel_length = x.length;
+
+    var block_idx = 0;
+    var cur_block = new Float32Array(block_size);
+    var noise_flags = [];
+    var start_idx = 0;
+    var stop_idx = start_idx + block_size - 1;
+
+    // The noise profile is specified in frequency bins, and is the timewise
+    // average of the fft magnitude.
+    while(stop_idx < channel_length) {
+      var cur_progress = start_idx / channel_length;
+
+      // Get the current block.
+      Blocking.CopyToBlock(x, channel_length, start_idx, stop_idx, cur_block, block_size); 
+
+      var cur_rms = SignalProcessing.RMS(cur_block);
+      if(cur_rms < threshold_amplitude) {
+        noise_flags.push(1);
+      }
+      else {
+        noise_flags.push(0);
+      }
+
+      start_idx = start_idx + hop_size;
+      stop_idx = start_idx + block_size - 1;
+      block_idx++;
+    }
+
+    var noise_intervals = ClipIntervalUtilities.FlagsToIntervals(noise_flags);
+
+    return noise_intervals;
+  }
 
   function GetNoiseProfile(x, channel_idx, params, test_mode) {
     block_size = params[1];
@@ -263,6 +300,7 @@
 
   /* Public variables go here. */
   return {
+    RMSThreshold: RMSThreshold,
     GetNoiseProfile: GetNoiseProfile,
     RemoveNoiseGivenProfile: RemoveNoiseGivenProfile,
 

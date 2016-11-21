@@ -41,6 +41,24 @@
     return ((block_idx) * hop_size);
   }
 
+  function IntervalsBlockIdxToSeconds(block_intervals, hop_size, sample_rate) {
+    var seconds_intervals = [];
+
+    for(var interval_idx = 0; interval_idx < block_intervals.length; interval_idx++) {
+      var block_interval = block_intervals[interval_idx];
+
+      var samples_start = BlockIdxToSampleIdx(block_interval.start, hop_size);
+      var seconds_start = samples_start / sample_rate;
+
+      var samples_stop = BlockIdxToSampleIdx(block_interval.stop, hop_size);
+      var seconds_stop = samples_stop / sample_rate;
+
+      seconds_intervals.push({start: seconds_start, stop: seconds_stop});
+    }
+
+    return seconds_intervals;
+  }
+
   /* 
    * Copy channel[start_idx:stop_idx] to block[0:copy_length]. If copy_length is
    * greater than block_length, only copy block_length samples. If we overrun 
@@ -106,11 +124,34 @@
     }
   }
 
+  // intervals is in seconds.
+  function ConcatenateIntervals(x, intervals, sample_rate) {
+    var y = [];
+    for(var interval_idx = 0; interval_idx < intervals.length; intervals++) {
+      var interval_start_seconds = intervals[interval_idx].start;
+      var interval_stop_seconds = intervals[interval_idx].stop;
+
+      var interval_start_samples = Math.floor(interval_start_seconds * sample_rate);
+      var interval_stop_samples = Math.floor(interval_stop_seconds * sample_rate);
+
+      for(var sample_idx = interval_start_samples; sample_idx <= interval_stop_samples; sample_idx++) {
+        if(sample_idx >= x.length) {
+          return;
+        }
+        y.push(x[sample_idx]);
+      }
+    }
+
+    return y;
+  }
+
   /* Public variables go here. */
   return {
     BlockIdxToSampleIdx: BlockIdxToSampleIdx,
+    IntervalsBlockIdxToSeconds: IntervalsBlockIdxToSeconds,
     CopyToBlock: CopyToBlock,
     CopyToChannel: CopyToChannel,
-    OverlapAndAdd: OverlapAndAdd
+    OverlapAndAdd: OverlapAndAdd,
+    ConcatenateIntervals: ConcatenateIntervals
   };
 });

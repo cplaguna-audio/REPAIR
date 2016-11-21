@@ -484,6 +484,16 @@
     return 20 * Math.log10(x);
   }
 
+  function RMS(x) {
+    var normalization = x.length;
+    var squared_sum = 0;
+    for(var i = 0; i < x.length; i++) {
+      squared_sum = squared_sum + (x[i] * x[i]);
+    }
+    var mean_squared = squared_sum / normalization;
+    return Math.sqrt(mean_squared);
+  }
+
   /* Public variables go here. */
   return {
     ZeroMatrix: ZeroMatrix,
@@ -507,6 +517,7 @@
     MyMin: MyMin,
     MyAverage: MyAverage,
     DBToLinear: DBToLinear,
-    LinearToDB: LinearToDB
+    LinearToDB: LinearToDB,
+    RMS: RMS
   };
 });
