@@ -41,6 +41,7 @@ define([
     'modules/codecs/WavEncoder',
     'modules/noise_removal/NoiseRemoval',
     'modules/perceptual_eq/PerceptualEq',
+    'modules/preview/Preview',
     'modules/signal_processing/Blocking',
     'modules/signal_processing/SignalProcessing',
     'modules/test/Test',
@@ -60,6 +61,7 @@ define([
               WavEncoder,
               NoiseRemoval,
               PerceptualEq,
+              Preview,
               Blocking,
               SignalProcessing,
               Test) {
@@ -79,6 +81,10 @@ define([
   // For noise removal.
   NOISE_REMOVAL_WORKERS = [];
   NOISE_PROFILE_WORKERS = [];
+
+  // True means only process the preview section of audio. False means process
+  // entire audio.
+  DOING_PREVIEW = false;
 
   $(document).ready(InitIndex);
 
@@ -157,6 +163,20 @@ define([
     RefreshIndex();
   }
 
+  function DisplayNoiseProfileClicked() {
+
+    if(IndexGlobal.STATE.showing_noise_profile) {
+      IndexGlobal.WAVEFORM_INTERACTOR.HideNoiseRegions();
+      IndexGlobal.STATE.showing_noise_profile = false;
+    }
+    else {
+      IndexGlobal.WAVEFORM_INTERACTOR.ShowNoiseRegions();
+      IndexGlobal.STATE.showing_noise_profile = true;
+    }
+
+    RefreshIndex();
+  }
+
   function ClippingExampleClicked() {
     var blob = null;
     var xhr = new XMLHttpRequest(); 
@@ -176,11 +196,14 @@ define([
           action_queue.push(DoDetectClipping);
           action_queue.push(DoNormalizeInput);
           action_queue.push(DoNormalizeOutput);
+          UpdateNoiseProfileIntervals(IndexGlobal.INITIAL_NOISE_THRESHOLD_PERCENTAGE);
+          action_queue.push(DoNoiseProfile);
+          action_queue.push(DoFindPreview);
           DoFirstAction();
         });
       };
-      reader.readAsArrayBuffer(blob);
       IndexGlobal.WAVEFORM_INTERACTOR.LoadAudio(blob);
+      reader.readAsArrayBuffer(blob);
       RefreshIndex();
     }
     xhr.send();
@@ -193,7 +216,7 @@ define([
     xhr.responseType = "blob";
     xhr.onload = function() {
       blob = xhr.response;
-      IndexGlobal.FILE_NAME = "clipping_example.wav";
+      IndexGlobal.FILE_NAME = "noisy_example.wav";
 
       var reader = new FileReader();
       reader.onload = function(ev) {
@@ -205,11 +228,14 @@ define([
           action_queue.push(DoDetectClipping);
           action_queue.push(DoNormalizeInput);
           action_queue.push(DoNormalizeOutput);
+          UpdateNoiseProfileIntervals(IndexGlobal.INITIAL_NOISE_THRESHOLD_PERCENTAGE);
+          action_queue.push(DoNoiseProfile);
+          action_queue.push(DoFindPreview);
           DoFirstAction();
         });
       };
-      reader.readAsArrayBuffer(blob);
       IndexGlobal.WAVEFORM_INTERACTOR.LoadAudio(blob);
+      reader.readAsArrayBuffer(blob);
       RefreshIndex();
     }
     xhr.send();
@@ -222,7 +248,7 @@ function EQExampleClicked() {
     xhr.responseType = "blob";
     xhr.onload = function() {
       blob = xhr.response;
-      IndexGlobal.FILE_NAME = "clipping_example.wav";
+      IndexGlobal.FILE_NAME = "eq_example.wav";
 
       var reader = new FileReader();
       reader.onload = function(ev) {
@@ -234,17 +260,22 @@ function EQExampleClicked() {
           action_queue.push(DoDetectClipping);
           action_queue.push(DoNormalizeInput);
           action_queue.push(DoNormalizeOutput);
+          UpdateNoiseProfileIntervals(IndexGlobal.INITIAL_NOISE_THRESHOLD_PERCENTAGE);
+          action_queue.push(DoNoiseProfile);
+          action_queue.push(DoFindPreview);
           DoFirstAction();
         });
       };
-      reader.readAsArrayBuffer(blob);
       IndexGlobal.WAVEFORM_INTERACTOR.LoadAudio(blob);
+      reader.readAsArrayBuffer(blob);
       RefreshIndex();
     }
     xhr.send();
   }
 
   function RepairClicked() {
+    IndexGlobal.PROCESSED_AUDIO_BUFFER = WebAudioUtils.CopyAudioBuffer(IndexGlobal.AUDIO_CONTEXT, IndexGlobal.INPUT_AUDIO_BUFFER);
+
     if(IndexGlobal.STATE.declip_active) {
       action_queue.push(DoDeclipShortBursts);
       action_queue.push(DoGetKnownPoints);
@@ -262,6 +293,13 @@ function EQExampleClicked() {
     DoFirstAction();
   }
 
+  // Need this because handling removing noise profile intervals happens within
+  // the waveform interactor.
+  function PublicDoNoiseProfile() {
+    action_queue.push(DoNoiseProfile);
+    DoFirstAction();
+  }
+
   function NoiseProfileClicked() {
     var noise_bounds = IndexGlobal.WAVEFORM_INTERACTOR.GetOriginalRegionBounds();
     if(noise_bounds.start === -1) {
@@ -271,12 +309,13 @@ function EQExampleClicked() {
     var sample_rate = IndexGlobal.AUDIO_CONTEXT.sampleRate;
 
     var noise_profile_interval = { start: noise_bounds.start, stop: noise_bounds.end };
-    IndexGlobal.NOISE_PROFILE_INTERVALS = [noise_profile_interval];
+    var new_intervals = [noise_profile_interval];
 
-    IndexGlobal.WAVEFORM_INTERACTOR.UpdateNoiseProfileRegions(IndexGlobal.NOISE_PROFILE_INTERVALS);
+    IndexGlobal.WAVEFORM_INTERACTOR.AddNoiseProfileRegions(new_intervals);
 
     action_queue.push(DoNoiseProfile);
     DoFirstAction();
+    IndexGlobal.STATE.noise_removal_active = true;
   }
 
   function UpdateNoiseProfileIntervals(threshold_percentage) {
@@ -287,12 +326,17 @@ function EQExampleClicked() {
     var mono_channel = WebAudioUtils.AudioBufferToMono(IndexGlobal.INPUT_AUDIO_BUFFER);
     var signal_max = Math.abs(SignalProcessing.MyMax(mono_channel));
     var threshold_amplitude = signal_max * threshold_percentage / 100;
-    IndexGlobal.NOISE_PROFILE_INTERVALS = NoiseRemoval.RMSThreshold(mono_channel, threshold_amplitude, block_size, hop_size);
-    IndexGlobal.NOISE_PROFILE_INTERVALS = Blocking.IntervalsBlockIdxToSeconds(IndexGlobal.NOISE_PROFILE_INTERVALS, hop_size, sample_rate);
-    IndexGlobal.WAVEFORM_INTERACTOR.UpdateNoiseProfileRegions(IndexGlobal.NOISE_PROFILE_INTERVALS);
+    var min_interval_length_samples = Math.floor(IndexGlobal.NOISE_INTERVAL_MIN_LENGTH_SECONDS * sample_rate);
 
-    action_queue.push(DoNoiseProfile);
-    DoFirstAction();
+    var new_intervals = NoiseRemoval.RMSThreshold(mono_channel, threshold_amplitude, block_size, hop_size, min_interval_length_samples);
+    new_intervals = Blocking.IntervalsBlockIdxToSeconds(new_intervals, hop_size, sample_rate);
+    IndexGlobal.WAVEFORM_INTERACTOR.ClearNoiseProfileRegions();
+    IndexGlobal.WAVEFORM_INTERACTOR.AddNoiseProfileRegions(new_intervals);
+
+    $("#noise_threshold_display").html(threshold_percentage.toString() + "%");
+    if(IndexGlobal.NOISE_PROFILE_INTERVALS.length > 0) {
+      IndexGlobal.STATE.noise_removal_active = true;
+    }
   }
 
   function SaveOutputClicked() {
@@ -318,9 +362,15 @@ function EQExampleClicked() {
       var audio_buffer = 0;
       if(do_input_buffer) {
         audio_buffer = IndexGlobal.INPUT_AUDIO_BUFFER;
+        if(DOING_PREVIEW) {
+          audio_buffer = IndexGlobal.PREVIEW_INPUT_AUDIO_BUFFER;
+        }
       }
       else {
         audio_buffer = IndexGlobal.PROCESSED_AUDIO_BUFFER;
+        if(DOING_PREVIEW) {
+          audio_buffer = IndexGlobal.PREVIEW_PROCESSED_AUDIO_BUFFER;
+        }
       }
       
       audio_buffer.copyToChannel(processed_channel, the_channel_idx);
@@ -328,15 +378,21 @@ function EQExampleClicked() {
       console.timeEnd('Gain');
 
       if(min_progress > 1) {
-        the_callback = function() {
+        if(DOING_PREVIEW) {
           console.log('callback: gain');
           DoNextAction();
         }
-        if(do_input_buffer) {
-          IndexGlobal.WAVEFORM_INTERACTOR.UpdateInputAudio(audio_buffer, the_callback);
-        }
         else {
-          IndexGlobal.WAVEFORM_INTERACTOR.UpdateProcessedAudio(audio_buffer, the_callback);
+          the_callback = function() {
+            console.log('callback: gain');
+            DoNextAction();
+          }
+          if(do_input_buffer) {
+            IndexGlobal.WAVEFORM_INTERACTOR.UpdateInputAudio(audio_buffer, the_callback);
+          }
+        else {
+            IndexGlobal.WAVEFORM_INTERACTOR.UpdateProcessedAudio(audio_buffer, the_callback);
+          }
         }
       }
 
@@ -372,24 +428,36 @@ function EQExampleClicked() {
     }
   }
 
-  function DeclipShortBurstsCallback(e) {
+  function DeclipShortBurstsCallback(e) {    
     cur_progress = e.data[0];
     the_channel_idx = e.data[1]
     PROGRESS[the_channel_idx] = cur_progress;
     if(cur_progress > 1) {
+      var processed_audio_buffer = IndexGlobal.PROCESSED_AUDIO_BUFFER;
+      if(DOING_PREVIEW) {
+        processed_audio_buffer = IndexGlobal.PREVIEW_PROCESSED_AUDIO_BUFFER;
+      }
+
       processed_channel = e.data[2];
-      IndexGlobal.PROCESSED_AUDIO_BUFFER.copyToChannel(processed_channel, the_channel_idx);
+      processed_audio_buffer.copyToChannel(processed_channel, the_channel_idx);
       
       min_progress = SignalProcessing.MyMin(PROGRESS);
-      console.timeEnd('DeclipShort');
 
       if(min_progress > 1) {
-        the_callback = function() {
-          IndexGlobal.STATE.did_declip_short_bursts = true;
+        console.timeEnd('DeclipShort');
+
+        if(DOING_PREVIEW) {
           RefreshIndex();
           DoNextAction();
         }
-        IndexGlobal.WAVEFORM_INTERACTOR.UpdateProcessedAudio(IndexGlobal.PROCESSED_AUDIO_BUFFER, the_callback);
+        else {
+          the_callback = function() {
+            IndexGlobal.STATE.did_declip_short_bursts = true;
+            RefreshIndex();
+            DoNextAction();
+          }
+          IndexGlobal.WAVEFORM_INTERACTOR.UpdateProcessedAudio(IndexGlobal.PROCESSED_AUDIO_BUFFER, the_callback);
+        }
       }
     }
     else {
@@ -403,8 +471,13 @@ function EQExampleClicked() {
     the_channel_idx = e.data[1]
     PROGRESS[the_channel_idx] = cur_progress;
     if(cur_progress > 1) {
+      var known_points = IndexGlobal.KNOWN_POINTS;
+      if(DOING_PREVIEW) {
+        known_points = IndexGlobal.PREVIEW_KNOWN_POINTS;
+      }
+
       cur_known_points = e.data[2];
-      KNOWN_POINTS[the_channel_idx] = cur_known_points;
+      known_points[the_channel_idx] = cur_known_points;
 
       min_progress = SignalProcessing.MyMin(PROGRESS);
       if(min_progress > 1) {
@@ -426,19 +499,31 @@ function EQExampleClicked() {
     the_channel_idx = e.data[1];
     PROGRESS[the_channel_idx] = cur_progress;
     if(cur_progress > 1) {
+      var processed_audio_buffer = IndexGlobal.PROCESSED_AUDIO_BUFFER;
+      if(DOING_PREVIEW) {
+        processed_audio_buffer = IndexGlobal.PREVIEW_PROCESSED_AUDIO_BUFFER;
+      }
+
       processed_channel = e.data[2];
-      IndexGlobal.PROCESSED_AUDIO_BUFFER.copyToChannel(processed_channel, the_channel_idx);
+      processed_audio_buffer.copyToChannel(processed_channel, the_channel_idx);
       min_progress = SignalProcessing.MyMin(PROGRESS);
 
       if(min_progress > 1) {
-        console.timeEnd('DeclipLongBursts');
-        the_callback = function() {
-          IndexGlobal.STATE.did_declip_long_bursts = true;
-          RefreshIndex();
-          DoNextAction();
-        };
+        if(DOING_PREVIEW) {
+            console.timeEnd('DeclipLongBursts');
+            RefreshIndex();
+            DoNextAction();
+        }
+        else {
+          console.timeEnd('DeclipLongBursts');
+          the_callback = function() {
+            IndexGlobal.STATE.did_declip_long_bursts = true;
+            RefreshIndex();
+            DoNextAction();
+          };
 
-        IndexGlobal.WAVEFORM_INTERACTOR.UpdateProcessedAudio(IndexGlobal.PROCESSED_AUDIO_BUFFER, the_callback);
+          IndexGlobal.WAVEFORM_INTERACTOR.UpdateProcessedAudio(IndexGlobal.PROCESSED_AUDIO_BUFFER, the_callback);
+        }
       }
     }
     else {
@@ -452,19 +537,31 @@ function EQExampleClicked() {
     the_channel_idx = e.data[1];
     PROGRESS[the_channel_idx] = cur_progress;
     if(cur_progress > 1) {
+      var processed_audio_buffer = IndexGlobal.PROCESSED_AUDIO_BUFFER;
+      if(DOING_PREVIEW) {
+        processed_audio_buffer = IndexGlobal.PREVIEW_PROCESSED_AUDIO_BUFFER;
+      }
+
       processed_channel = e.data[2];
-      IndexGlobal.PROCESSED_AUDIO_BUFFER.copyToChannel(processed_channel, the_channel_idx);
+      processed_audio_buffer.copyToChannel(processed_channel, the_channel_idx);
       min_progress = SignalProcessing.MyMin(PROGRESS);
 
       if(min_progress > 1) {
-        console.timeEnd('NoiseRemoval');
-        the_callback = function() {
-          IndexGlobal.STATE.did_remove_noise = true;
-          RefreshIndex();
-          DoNextAction()
-        };
+        if(DOING_PREVIEW) {
+          console.timeEnd('NoiseRemoval');
+            RefreshIndex();
+            DoNextAction();
+        }
+        else {
+          console.timeEnd('NoiseRemoval');
+          the_callback = function() {
+            IndexGlobal.STATE.did_remove_noise = true;
+            RefreshIndex();
+            DoNextAction();
+          };
 
-        IndexGlobal.WAVEFORM_INTERACTOR.UpdateProcessedAudio(IndexGlobal.PROCESSED_AUDIO_BUFFER, the_callback);
+          IndexGlobal.WAVEFORM_INTERACTOR.UpdateProcessedAudio(IndexGlobal.PROCESSED_AUDIO_BUFFER, the_callback);
+        }
       }
     }
     else {
@@ -496,7 +593,13 @@ function EQExampleClicked() {
 
   function PerceptualEqCallback(e) {
     UpdateProgressBar(1.1);
-    IndexGlobal.PROCESSED_AUDIO_BUFFER = e.renderedBuffer;
+
+    if(DOING_PREVIEW) {
+      IndexGlobal.PREVIEW_PROCESSED_AUDIO_BUFFER = e.renderedBuffer;
+    }
+    else {
+      IndexGlobal.PROCESSED_AUDIO_BUFFER = e.renderedBuffer;
+    }
     RefreshIndex();
     DoNextAction();
   }
@@ -513,15 +616,21 @@ function EQExampleClicked() {
     $("#noise_profile_button").click(function() { NoiseProfileClicked(); });
     $("#download_audio_button").click(function() { SaveOutputClicked(); });
 
-
     var noise_threshold_slider = $("#noise_threshold_slider");
     var noise_threshold_display = $("#noise_threshold_display");
     noise_threshold_display.html(noise_threshold_slider[0].value.toString() + "%");
     noise_threshold_slider.change(function() { 
         var threshold_percentage = noise_threshold_slider[0].value;
         UpdateNoiseProfileIntervals(threshold_percentage);
+        action_queue.push(DoNoiseProfile);
+        DoFirstAction();
+    });
+
+    noise_threshold_slider[0].addEventListener("input", function() { 
+        var threshold_percentage = noise_threshold_slider[0].value;
         noise_threshold_display.html(threshold_percentage.toString() + "%");
     });
+    noise_threshold_slider[0].value = IndexGlobal.INITIAL_NOISE_THRESHOLD_PERCENTAGE;
 
     $("#declip_activate_button").click(function() {
       var activate_button = document.getElementById("declip_activate_button");
@@ -536,11 +645,19 @@ function EQExampleClicked() {
       ActivateClicked("auto_eq", activate_button); 
     });
 
-    var options_views = document.getElementsByClassName("options_view");
+    var preview_buttons = $(".preview_button");
+    for(var idx = 0; idx < preview_buttons.length; idx++) {
+      preview_buttons[idx].addEventListener('click', DoPreview);
+    }
+
+    var options_views = $(".options_view");
     for(var idx = 0; idx < options_views.length; idx++) {
       var options_view = options_views[idx];
       options_view.style.display = "none";
     }
+
+    // var show_noise_profile_button = document.getElementById("display_noise_profile_button");
+    // show_noise_profile_button.addEventListener('click', DisplayNoiseProfileClicked);
 
     // Construct the web workers.
     if (window.Worker) {
@@ -599,11 +716,17 @@ function EQExampleClicked() {
                   IndexGlobal.INPUT_AUDIO_BUFFER = buffer;
                   IndexGlobal.PROCESSED_AUDIO_BUFFER = WebAudioUtils.CopyAudioBuffer(IndexGlobal.AUDIO_CONTEXT, IndexGlobal.INPUT_AUDIO_BUFFER);
                   IndexGlobal.STATE.audio_loaded = true;
-                  DoDetectClipping();
+                  action_queue.push(DoDetectClipping);
+                  action_queue.push(DoNormalizeInput);
+                  action_queue.push(DoNormalizeOutput);
+                  UpdateNoiseProfileIntervals(IndexGlobal.INITIAL_NOISE_THRESHOLD_PERCENTAGE);
+                  action_queue.push(DoNoiseProfile);
+                  action_queue.push(DoFindPreview);
+                  DoFirstAction();                  
                 });
               };
-              reader.readAsArrayBuffer(e.dataTransfer.files[0]);
               IndexGlobal.WAVEFORM_INTERACTOR.LoadAudio(e.dataTransfer.files[0]);
+              reader.readAsArrayBuffer(e.dataTransfer.files[0]);
               RefreshIndex();
             } 
             else {
@@ -668,9 +791,15 @@ function EQExampleClicked() {
     var audio_buffer = 0;
     if(do_input_buffer) {
       audio_buffer = IndexGlobal.INPUT_AUDIO_BUFFER;
+      if(DOING_PREVIEW) {
+        audio_buffer = IndexGlobal.PREVIEW_INPUT_AUDIO_BUFFER;
+      }
     }
     else {
       audio_buffer = IndexGlobal.PROCESSED_AUDIO_BUFFER;
+      if(DOING_PREVIEW) {
+        audio_buffer = IndexGlobal.PREVIEW_PROCESSED_AUDIO_BUFFER;
+      }
     }
     console.time('Gain');
 
@@ -707,7 +836,14 @@ function EQExampleClicked() {
 
   function DoDeclipShortBursts() {
     console.time('DeclipShort');
-    var num_channels = IndexGlobal.INPUT_AUDIO_BUFFER.numberOfChannels;
+    var input_audio_buffer = IndexGlobal.INPUT_AUDIO_BUFFER;
+    var processed_audio_buffer = IndexGlobal.PROCESSED_AUDIO_BUFFER;
+    if(DOING_PREVIEW) {
+      input_audio_buffer = IndexGlobal.PREVIEW_INPUT_AUDIO_BUFFER;
+      processed_audio_buffer = IndexGlobal.PREVIEW_PROCESSED_AUDIO_BUFFER; 
+    }
+
+    var num_channels = input_audio_buffer.numberOfChannels;
 
     // Start up the progress bar pop-up.
     ResetProgressBar('1/3: Declipping Short Bursts');
@@ -720,19 +856,40 @@ function EQExampleClicked() {
     // Start the audio processing on a separate thread.
     if(window.Worker) {
       for(channel_idx = 0; channel_idx < num_channels; channel_idx++) {
-        params = [IndexGlobal.INPUT_AUDIO_BUFFER.sampleRate];
-        DECLIP_SHORT_BURSTS_WORKERS[channel_idx].postMessage([channel_idx, IndexGlobal.INPUT_AUDIO_BUFFER.getChannelData(channel_idx), IndexGlobal.SHORT_CLIP_INTERVALS[channel_idx], params]);
+        var short_clip_intervals = IndexGlobal.SHORT_CLIP_INTERVALS[channel_idx];
+        if(DOING_PREVIEW) {
+          short_clip_intervals = GetCroppedClipIntervals(short_clip_intervals, IndexGlobal.PREVIEW_INTERVAL);
+        }
+
+        params = [input_audio_buffer.sampleRate];
+        DECLIP_SHORT_BURSTS_WORKERS[channel_idx].postMessage([channel_idx, input_audio_buffer.getChannelData(channel_idx), short_clip_intervals, params]);
       }
     }
   }
 
   function DoGetKnownPoints() {  
     console.time('GetKnownPoints');
-    var num_channels = IndexGlobal.INPUT_AUDIO_BUFFER.numberOfChannels;
+    var input_audio_buffer = IndexGlobal.INPUT_AUDIO_BUFFER;
+    var processed_audio_buffer = IndexGlobal.PROCESSED_AUDIO_BUFFER;
+    if(DOING_PREVIEW) {
+      input_audio_buffer = IndexGlobal.PREVIEW_INPUT_AUDIO_BUFFER;
+      processed_audio_buffer = IndexGlobal.PREVIEW_PROCESSED_AUDIO_BUFFER; 
+    }
 
-    KNOWN_POINTS = [];
-    for(var channel_idx = 0; channel_idx < num_channels; channel_idx++) {
-      KNOWN_POINTS[channel_idx] = [];
+    var num_channels = input_audio_buffer.numberOfChannels;
+
+    if(DOING_PREVIEW) {
+      IndexGlobal.PREVIEW_KNOWN_POINTS = [];
+      for(var channel_idx = 0; channel_idx < num_channels; channel_idx++) {
+        IndexGlobal.PREVIEW_KNOWN_POINTS[channel_idx] = [];
+      }
+
+    }
+    else {
+      IndexGlobal.KNOWN_POINTS = [];
+      for(var channel_idx = 0; channel_idx < num_channels; channel_idx++) {
+        IndexGlobal.KNOWN_POINTS[channel_idx] = [];
+      }
     }
 
     // Start up the progress bar pop-up.
@@ -746,15 +903,27 @@ function EQExampleClicked() {
     // Start the audio processing on a separate thread.
     if(window.Worker) {
       for(channel_idx = 0; channel_idx < num_channels; channel_idx++) {
-        params = [IndexGlobal.INPUT_AUDIO_BUFFER.sampleRate, IndexGlobal.DECLIP_BLOCK_SIZE, IndexGlobal.DECLIP_HOP_SIZE, IndexGlobal.MIN_FFT_LENGTH];
-        GET_KNOWN_POINTS_WORKERS[channel_idx].postMessage([channel_idx, IndexGlobal.PROCESSED_AUDIO_BUFFER.getChannelData(channel_idx), IndexGlobal.LONG_CLIP_INTERVALS[channel_idx], params]);
+        var long_clip_intervals = IndexGlobal.LONG_CLIP_INTERVALS[channel_idx];
+        if(DOING_PREVIEW) {
+          long_clip_intervals = GetCroppedClipIntervals(long_clip_intervals, IndexGlobal.PREVIEW_INTERVAL);
+        }
+
+        params = [input_audio_buffer.sampleRate, IndexGlobal.DECLIP_BLOCK_SIZE, IndexGlobal.DECLIP_HOP_SIZE, IndexGlobal.MIN_FFT_LENGTH];
+        GET_KNOWN_POINTS_WORKERS[channel_idx].postMessage([channel_idx, processed_audio_buffer.getChannelData(channel_idx), long_clip_intervals, params]);
       }
     }
   }
 
   function DoDeclipLongBursts() {
     console.time('DeclipLongBursts');
-    var num_channels = IndexGlobal.INPUT_AUDIO_BUFFER.numberOfChannels;
+    var input_audio_buffer = IndexGlobal.INPUT_AUDIO_BUFFER;
+    var processed_audio_buffer = IndexGlobal.PROCESSED_AUDIO_BUFFER;
+    if(DOING_PREVIEW) {
+      input_audio_buffer = IndexGlobal.PREVIEW_INPUT_AUDIO_BUFFER;
+      processed_audio_buffer = IndexGlobal.PREVIEW_PROCESSED_AUDIO_BUFFER; 
+    }
+
+    var num_channels = input_audio_buffer.numberOfChannels;
 
     // Start up the progress bar pop-up.
     ResetProgressBar('3/3: Declipping Long Bursts');
@@ -764,10 +933,20 @@ function EQExampleClicked() {
       PROGRESS[channel_idx] = 0;
     }
 
+    var known_points = IndexGlobal.KNOWN_POINTS;
+    if(DOING_PREVIEW) {
+      known_points = IndexGlobal.PREVIEW_KNOWN_POINTS;
+    }
+
     if(window.Worker) {
       for(channel_idx = 0; channel_idx < num_channels; channel_idx++) {
-        params = [IndexGlobal.INPUT_AUDIO_BUFFER.sampleRate, IndexGlobal.DECLIP_BLOCK_SIZE, IndexGlobal.DECLIP_HOP_SIZE];
-        DECLIP_LONG_BURSTS_WORKERS[channel_idx].postMessage([channel_idx, IndexGlobal.PROCESSED_AUDIO_BUFFER.getChannelData(channel_idx), IndexGlobal.LONG_CLIP_INTERVALS[channel_idx], KNOWN_POINTS[channel_idx], params]);
+        var long_clip_intervals = IndexGlobal.LONG_CLIP_INTERVALS[channel_idx];
+        if(DOING_PREVIEW) {
+          long_clip_intervals = GetCroppedClipIntervals(long_clip_intervals, IndexGlobal.PREVIEW_INTERVAL);
+        }
+
+        params = [input_audio_buffer.sampleRate, IndexGlobal.DECLIP_BLOCK_SIZE, IndexGlobal.DECLIP_HOP_SIZE];
+        DECLIP_LONG_BURSTS_WORKERS[channel_idx].postMessage([channel_idx, processed_audio_buffer.getChannelData(channel_idx), long_clip_intervals, known_points[channel_idx], params]);
       }
     }  
   }
@@ -801,9 +980,15 @@ function EQExampleClicked() {
 
   function DoNoiseRemoval() {
     if(IndexGlobal.STATE.did_profile_noise) {
+      var input_audio_buffer = IndexGlobal.INPUT_AUDIO_BUFFER;
+      var processed_audio_buffer = IndexGlobal.PROCESSED_AUDIO_BUFFER;
+      if(DOING_PREVIEW) {
+        input_audio_buffer = IndexGlobal.PREVIEW_INPUT_AUDIO_BUFFER;
+        processed_audio_buffer = IndexGlobal.PREVIEW_PROCESSED_AUDIO_BUFFER; 
+      }
 
       console.time('NoiseRemoval');
-      var num_channels = IndexGlobal.INPUT_AUDIO_BUFFER.numberOfChannels;
+      var num_channels = input_audio_buffer.numberOfChannels;
       PROGRESS = [];
       for(var channel_idx = 0; channel_idx < num_channels; channel_idx++) {
         PROGRESS[channel_idx] = 0;
@@ -812,14 +997,70 @@ function EQExampleClicked() {
       ResetProgressBar('Noise Removal');
       if(window.Worker) {
         for(channel_idx = 0; channel_idx < num_channels; channel_idx++) {
-          params = [IndexGlobal.INPUT_AUDIO_BUFFER.sampleRate, IndexGlobal.NOISE_REMOVAL_BLOCK_SIZE, IndexGlobal.NOISE_REMOVAL_HOP_SIZE];
-          NOISE_REMOVAL_WORKERS[channel_idx].postMessage([channel_idx, IndexGlobal.INPUT_AUDIO_BUFFER.getChannelData(channel_idx), IndexGlobal.NOISE_PROFILE[channel_idx], params]);
+          params = [input_audio_buffer.sampleRate, IndexGlobal.NOISE_REMOVAL_BLOCK_SIZE, IndexGlobal.NOISE_REMOVAL_HOP_SIZE];
+          NOISE_REMOVAL_WORKERS[channel_idx].postMessage([channel_idx, processed_audio_buffer.getChannelData(channel_idx), IndexGlobal.NOISE_PROFILE[channel_idx], params]);
         }
       }
     }
     else {
       alert("Load an audio file first.");
     }
+  }
+
+  function DoFindPreview() {
+    if(IndexGlobal.STATE.audio_loaded) {
+      var sample_rate = IndexGlobal.AUDIO_CONTEXT.sampleRate;
+      var block_size = Math.floor(IndexGlobal.PREVIEW_BLOCK_SIZE_SECONDS * sample_rate);
+      var hop_size = Math.floor(IndexGlobal.PREVIEW_HOP_SIZE_SECONDS * sample_rate);
+
+      var input_length = IndexGlobal.INPUT_AUDIO_BUFFER.size;
+      if(block_size > input_length) {
+        block_size = input_length;
+        hop_size = block_size / 2; // Irrelevant: there is one block. But for sanity.
+      }
+
+      var mono_channel = WebAudioUtils.AudioBufferToMono(IndexGlobal.INPUT_AUDIO_BUFFER);
+      IndexGlobal.PREVIEW_INTERVAL = Preview.GetPreviewBounds(mono_channel, block_size, hop_size);
+      IndexGlobal.PREVIEW_INPUT_AUDIO_BUFFER = WebAudioUtils.CropBuffer(IndexGlobal.INPUT_AUDIO_BUFFER, IndexGlobal.PREVIEW_INTERVAL, IndexGlobal.AUDIO_CONTEXT);
+      IndexGlobal.STATE.did_find_preview = true;
+    }
+    else {
+      alert("Load an audio file first.");
+    }
+    DoNextAction();
+  }
+
+  // Play the preview.
+  function PlayPreview() {
+    var source = IndexGlobal.AUDIO_CONTEXT.createBufferSource();
+    source.buffer = IndexGlobal.PREVIEW_PROCESSED_AUDIO_BUFFER;
+    source.connect(IndexGlobal.AUDIO_CONTEXT.destination);
+    source.start(0);   
+    DoNextAction();
+    DOING_PREVIEW = false;
+  }
+
+  function DoPreview() {
+    DOING_PREVIEW = true;
+    IndexGlobal.PREVIEW_PROCESSED_AUDIO_BUFFER = WebAudioUtils.CopyAudioBuffer(IndexGlobal.AUDIO_CONTEXT, IndexGlobal.PREVIEW_INPUT_AUDIO_BUFFER);
+
+    if(IndexGlobal.STATE.declip_active) {
+      action_queue.push(DoDeclipShortBursts);
+      action_queue.push(DoGetKnownPoints);
+      action_queue.push(DoDeclipLongBursts);
+    }
+    if(IndexGlobal.STATE.noise_removal_active) {
+      action_queue.push(DoNoiseRemoval);
+    }
+    if(IndexGlobal.STATE.auto_eq_active) {
+      action_queue.push(DoPerceptualEq);
+    }
+    action_queue.push(DoNormalizeInput);
+    action_queue.push(DoNormalizeOutput);
+    action_queue.push(PlayPreview);
+
+    DoFirstAction();
+
   }
 
   function DoNoiseProfile() {
@@ -849,15 +1090,16 @@ function EQExampleClicked() {
   function DoPerceptualEq() {
     if(IndexGlobal.STATE.audio_loaded) {
       console.time('PerceptualEq');
-      PROGRESS = [];
-      for(var channel_idx = 0; channel_idx < PROGRESS.length; channel_idx++) {
-        PROGRESS[channel_idx] = 0;
-      }
 
+      var processed_audio_buffer = IndexGlobal.PROCESSED_AUDIO_BUFFER;
+      if(DOING_PREVIEW) {
+        processed_audio_buffer = IndexGlobal.PREVIEW_PROCESSED_AUDIO_BUFFER; 
+      }
+      
       ResetProgressBar('Applying Perceptual Equalation');
       var warmth = GetWarmth();
       var brightness = GetBrightness();
-      PerceptualEq.ApplyPerceptualEq(IndexGlobal.INPUT_AUDIO_BUFFER, warmth, brightness, PerceptualEqCallback);
+      PerceptualEq.ApplyPerceptualEq(processed_audio_buffer, warmth, brightness, PerceptualEqCallback);
     }
     else {
       alert("Load an audio file first.");
@@ -889,6 +1131,32 @@ function EQExampleClicked() {
     }
 
     return false;
+  }
+
+  function GetCroppedClipIntervals(clip_intervals, range) {
+      var start = range.start;
+      var stop = range.stop;
+      var new_clip_intervals = [];
+      for(read_idx = 0; read_idx < clip_intervals.length; read_idx++) {
+        var cur_interval = clip_intervals[read_idx];
+
+        // Throw away all intervals that have no overlap with the range.
+        if(cur_interval.stop < start || cur_interval.start > stop) {
+          continue;
+        }
+        if(cur_interval.start < start) {
+          cur_interval.start = start;
+        }
+        if(cur_interval.stop > stop) {
+          cur_interval.stop = stop;
+        }
+
+        // Shift the interval to the left. |start| should become 0.
+        new_interval = { start: cur_interval.start - start, stop: cur_interval.stop - start};
+        new_clip_intervals.push(new_interval);
+      }
+
+      return new_clip_intervals;
   }
 
   /* 
@@ -933,6 +1201,11 @@ function EQExampleClicked() {
   function RefreshIndex() {
     var file_name_element = document.getElementById("file_name");
     file_name_element.innerHTML = IndexGlobal.FILE_NAME;
+
+    if(IndexGlobal.NOISE_PROFILE_INTERVALS.length == 0) {
+      IndexGlobal.STATE.noise_removal_active = false;
+      IndexGlobal.STATE.did_profile_noise = false;
+    }
 
     // 1. Check to allow wavesurfer interaction.
     if(ShouldAllowWaveformInteraction()) {
@@ -995,6 +1268,7 @@ function EQExampleClicked() {
       }
 
       var noise_removal_activate_button = document.getElementById("noise_removal_activate_button");
+
       if(IndexGlobal.STATE.did_profile_noise) {
         noise_removal_activate_button.style.opacity = "1";
         noise_removal_activate_button.disabled = false;
@@ -1003,9 +1277,52 @@ function EQExampleClicked() {
         noise_removal_activate_button.style.opacity = "0.2";
         noise_removal_activate_button.disabled = true;
       }
+
+      var declip_preview_button = $("#declip_preview_button")[0];
+      if(IndexGlobal.STATE.declip_active) {
+        declip_preview_button.style.opacity = "1";
+        declip_preview_button.disabled = false;
+      }
+      else {
+        declip_preview_button.style.opacity = "0.2";
+        declip_preview_button.disabled = true;
+      }
+
+      var noise_removal_preview_button = $("#noise_removal_preview_button")[0];
+      if(IndexGlobal.STATE.did_profile_noise && IndexGlobal.STATE.noise_removal_active) {
+        noise_removal_preview_button.style.opacity = "1";
+        noise_removal_preview_button.disabled = false;
+      }
+      else {
+        noise_removal_preview_button.style.opacity = "0.2";
+        noise_removal_preview_button.disabled = true;
+      }
+
+      var auto_eq_preview_button = $("#auto_eq_preview_button")[0];
+      if(IndexGlobal.STATE.auto_eq_active) {
+        auto_eq_preview_button.style.opacity = "1";
+        auto_eq_preview_button.disabled = false;
+      }
+      else {
+        auto_eq_preview_button.style.opacity = "0.2";
+        auto_eq_preview_button.disabled = true;
+      }
+      /*var show_noise_profile_button = document.getElementById("display_noise_profile_button");
+      show_noise_profile_button.disabled = false;
+      show_noise_profile_button.style.opacity = "1";
+      if(IndexGlobal.STATE.showing_noise_profile) {
+        show_noise_profile_button.firstChild.data = "Hide Noise Regions";
+      }
+      else {
+        show_noise_profile_button.firstChild.data = "Show Noise Regions";
+      }*/
     }
     else {
       IndexGlobal.WAVEFORM_INTERACTOR.DisableInteraction();
+
+      /*var show_noise_profile_button = document.getElementById("display_noise_profile_button");
+      show_noise_profile_button.disabled = true;
+      show_noise_profile_button.style.opacity = "0.2";*/
 
       var toggle_waveform_button = document.getElementById("toggle_waveform_button");
       toggle_waveform_button.style.opacity = "0.2";
@@ -1036,6 +1353,12 @@ function EQExampleClicked() {
         var plugin_image = plugin_images[i];
         plugin_image.removeEventListener('click', PluginImageClicked);
         plugin_image.style.opacity = "0.2";
+      }
+
+      var preview_buttons = $(".preview_button");
+      for(var idx = 0; idx < preview_buttons.length; idx++) {
+        preview_buttons[idx].style.opacity = 0.2;
+        preview_buttons[idx].disabled = true;
       }
     }
 
@@ -1072,6 +1395,7 @@ function EQExampleClicked() {
       auto_eq_img.src = "resources/AutoEQIconOff.png";
       auto_eq_activate_button.firstChild.data = "Activate";
     }
+
   }
 
   function FlushIndex() {
@@ -1093,6 +1417,7 @@ function EQExampleClicked() {
     IndexGlobal.STATE.did_declip_long_bursts = false;
     IndexGlobal.STATE.did_profile_noise = false;
     IndexGlobal.STATE.did_remove_noise = false;
+    IndexGlobal.STATE.did_find_preview = false;
 
     IndexGlobal.STATE.declip_active = false;
     IndexGlobal.STATE.noise_removal_active = false;
@@ -1142,6 +1467,7 @@ function EQExampleClicked() {
 
   /* Public variables go here. */
   return {
-
+    PublicDoNoiseProfile: PublicDoNoiseProfile,
+    RefreshIndex: RefreshIndex
   };
 });

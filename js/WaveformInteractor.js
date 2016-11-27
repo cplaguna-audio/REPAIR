@@ -32,9 +32,11 @@
  *  use the WaveSurfer library to accomplish this: you should check it out!  *
  *****************************************************************************/
 
-define([
+ define([
     /* Includes go here. */
-  ], function() {
+    'IndexGlobal',
+    'IndexController',
+  ], function(IndexGlobal, IndexController) {
 
   // Prototype for a WaveformInteractor object.
   function WaveformInteractor(content_width_px) {
@@ -59,6 +61,7 @@ define([
     this.original_region = null;
     this.processed_region = null;
     this.noise_profile_regions = [];
+    this.hidden_noise_profile_regions = [];
     this.is_playing = false;
 
     this.disabled = false;
@@ -274,6 +277,20 @@ define([
           play_image_el.src = "resources/transport/pause.png";
         }
       });   
+
+      this.original_wavesurfer.on('region-dblclick', function(the_region) {
+        // Only handle the noise_profile regions, which cannot be dragged.
+        if(the_region.drag) {
+          return;
+        }
+
+        var index = me.noise_profile_regions.indexOf(the_region);
+        if (index > -1) {
+          me.noise_profile_regions.splice(index, 1);
+        }
+        the_region.remove();
+        me.RemoveRegionFromIndex(the_region);
+      });
 
       this.processed_wavesurfer.on('region-created', function(the_region) {
         if(me.VERBOSE) {
@@ -587,18 +604,57 @@ define([
         region.remove();
       }
       this.noise_profile_regions.length = 0;
+      IndexGlobal.NOISE_PROFILE_INTERVALS.length = 0;
     }
 
-    this.UpdateNoiseProfileRegions = function(noise_profile_intervals) {
-      this.ClearNoiseProfileRegions();
-
+    this.AddNoiseProfileRegions = function(noise_profile_intervals) {
       for(var region_idx = 0; region_idx < noise_profile_intervals.length; region_idx++) {
         var cur_interval = noise_profile_intervals[region_idx];
         var new_region = this.original_wavesurfer.addRegion({start: cur_interval.start, end: cur_interval.stop, drag: false, color:"rgba(100, 0, 0, 0.1)"});
         this.noise_profile_regions.push(new_region);
+
+        me.AddRegionToIndex(new_region);
       }
+      require("IndexController").RefreshIndex();
     }
 
+    this.ShowNoiseRegions = function() {
+      this.noise_profile_regions.length = 0;
+      for(var region_idx = 0; region_idx < this.hidden_noise_profile_regions.length; region_idx++) {
+        var cur_region = this.hidden_noise_profile_regions[region_idx];
+        var new_region = this.original_wavesurfer.addRegion({start: cur_region.start, end: cur_region.end, drag: false, color:"rgba(100, 0, 0, 0.1)"});
+        this.noise_profile_regions.push(new_region);
+      }
+
+    }
+
+    this.HideNoiseRegions = function() {
+      this.hidden_noise_profile_regions = [];
+      for(var region_idx = 0; region_idx < this.noise_profile_regions.length; region_idx++) {
+        var cur_region = this.noise_profile_regions[region_idx];
+        cur_region.remove();
+        this.hidden_noise_profile_regions.push(cur_region)
+      }
+      this.noise_profile_regions = [];
+    }
+
+    this.AddRegionToIndex = function(region) {
+      var new_interval = {start: region.start, stop: region.end};
+      IndexGlobal.NOISE_PROFILE_INTERVALS.push(new_interval);
+    }
+
+    this.RemoveRegionFromIndex = function(region) {
+      for(var idx = 0; idx < IndexGlobal.NOISE_PROFILE_INTERVALS.length; idx++) {
+        var cur_interval = IndexGlobal.NOISE_PROFILE_INTERVALS[idx];
+        if(cur_interval.start === region.start && cur_interval.stop === region.end) {
+          IndexGlobal.NOISE_PROFILE_INTERVALS.splice(idx, 1);
+          require("IndexController").PublicDoNoiseProfile();
+          break;
+        }
+      }
+
+      require("IndexController").RefreshIndex();
+    }
   }
 
     /* Public variables go here. */

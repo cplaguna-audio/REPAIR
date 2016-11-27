@@ -69,6 +69,7 @@ define([
     tests_pass = tests_pass && TestMyMax();
     tests_pass = tests_pass && TestMyMin();
     tests_pass = tests_pass && TestMyAverage();
+    tests_pass = tests_pass && TestRMS();
     return tests_pass;
   }
 
@@ -534,15 +535,43 @@ function TestApplyMedianFilter() {
     return tests_pass;
   }
 
+ function TestRMS() {
+    var tests_pass = true;
+    var TOLERANCE = 0.008;
+
+    var x = [0.3575,
+             0.5155,
+             0.4863,
+            -0.2155,
+             0.3110,
+            -0.6576,
+             0.4121,
+            -0.9363];
+
+    var correct = 0.5306;
+
+    var result = SignalProcessing.RMS(x);
+    if(!TestHelpers.EqualityTolerance(correct, result, TOLERANCE)) {
+      console.log('Test Failed: TestRMS() #1');
+      console.log('result: ' + result.toString());
+      console.log('x: ' + x.toString());
+      tests_pass = false;
+    }
+
+    return tests_pass;    
+  }
+
   ///////////////////////////////////
   //          Blocking.js          //
   ///////////////////////////////////
   function TestFileBlocking() {
     var tests_pass = true;  
     tests_pass = tests_pass && TestBlockIdxToSampleIdx();
+    tests_pass = tests_pass && TestIntervalsBlockIdxToSeconds();
     tests_pass = tests_pass && TestCopyToBlock();
     tests_pass = tests_pass && TestCopyToChannel();
     tests_pass = tests_pass && TestOverlapAndAdd();
+    tests_pass = tests_pass && TestConcatenateIntervals();
 
     return tests_pass;
   }
@@ -559,6 +588,29 @@ function TestApplyMedianFilter() {
     var result1 = Blocking.BlockIdxToSampleIdx(5, 256);
     if(result1 != 1280) {
       console.log('Test Failed: BlockIdxToSampleIdx() #2');
+      return false;
+    }
+
+    return tests_pass;
+  }
+
+  function TestIntervalsBlockIdxToSeconds() {
+    var tests_pass = true;
+
+    var intervals = [
+      {start: 1, stop: 2},
+      {start: 3, stop: 5}];
+
+    var correct = [
+      {start: 25, stop: 50},
+      {start: 75, stop: 125}];
+   
+    hop_size = 50;
+    var sample_rate = 2;
+
+    var result = Blocking.IntervalsBlockIdxToSeconds(intervals, hop_size, sample_rate);
+    if(!TestHelpers.ClipIntervalEquality(result, correct)) {
+      console.log('Test Failed: TestIntervalsBlockIdxToSeconds() #1');
       return false;
     }
 
@@ -708,9 +760,31 @@ function TestApplyMedianFilter() {
       console.log(channel_3);
       tests_pass = false;
     }
+    return tests_pass;
+  }
+
+  function TestConcatenateIntervals() {
+    var tests_pass = true;
+
+    var x = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+    var sample_rate = 1;
+    var intervals = [
+      {start: 2, stop: 5},
+      {start: 7, stop: 7},
+      {start: 9, stop: 10}];
+
+    var correct = [2, 3, 4, 5, 7, 9, 10];
+
+    var result = Blocking.ConcatenateIntervals(x, intervals, sample_rate);
+    if(!TestHelpers.ArrayEquality(result, correct)) {
+      console.log('Test Failed: TestConcatenateIntervals() #1');
+      tests_pass = false;
+    }
 
     return tests_pass;
   }
+
+
 
   ///////////////////////////////////
   //  CubicSplineInterpolation.js  //
@@ -880,6 +954,7 @@ function TestApplyMedianFilter() {
 
     return tests_pass;
   }
+
 
   /* Public variables go here. */
   return {

@@ -26,6 +26,9 @@
       <div id="original_waveform_container" >
         <div width="100%">
         <div id="file_name"></div>
+
+        <!-- Think about adding regions while hidden <button id="display_noise_profile_button" class="parameter_display_buttons">Hide Noise Regions</button> -->
+
         <button id="clipping_example" class="load_example">Clipping Example</button>
         <button id="noisy_example" class="load_example">Noisy Example</button>
         <button id="eq_example" class="load_example">EQ Example</button>
@@ -84,6 +87,7 @@
         </div>
         <div class="activate_view">
           <button id="declip_activate_button" class="activate_button">Activate</button>
+          <button id="declip_preview_button" class="preview_button">Preview</button>
         </div>
 
       </div>
@@ -104,7 +108,7 @@
             </tr>
             <tr>
               <td><input type="range" min="0" max="100" value="50" id="noise_threshold_slider" class="vertical_slider" orient="vertical"></input></td>
-              <td><button id="noise_profile_button">Set Noise Profile Manually</button></td>
+              <td><button id="noise_profile_button">Add Noise Region</button></td>
             </tr>
             <tr>
               <td id="noise_threshold_display">Some %</td>
@@ -114,6 +118,7 @@
         </div>
         <div class="activate_view">
           <button id="noise_removal_activate_button" class="activate_button">Activate</button>
+          <button id="noise_removal_preview_button" class="preview_button">Preview</button>
         </div>
       </div>
       <div id="auto_eq_options_view" class ="options_view">
@@ -141,6 +146,7 @@
         </div>
         <div class="activate_view">
           <button id="auto_eq_activate_button" class="activate_button">Activate</button>
+          <button id="auto_eq_preview_button" class="preview_button">Preview</button>
         </div>
       </div>
     </div>

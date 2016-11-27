@@ -36,9 +36,9 @@ h1 {
   float:left;
 }
 
-.load_example {
+
+.load_example, .parameter_display_buttons {
   color: #AFA5AA;
-  float:right;
   background-color: #444444;
   border-style: solid;
   border-width: 1px;
@@ -47,6 +47,10 @@ h1 {
   box-shadow: 0px 1px 1px 0 #666666, 0px 1px 1px 0 #666666;
   margin-left: 2px;
   margin-right: 2px;
+}
+
+.load_example {
+  float:right;
 }
 
 #load_example:focus {
@@ -260,7 +264,7 @@ h1 {
   height: 200px;
 }
 
-.activate_button {
+.activate_button, .preview_button {
   display: block;
   font-size: 1.2em;
   float:right; /* margin: 0 auto; */
@@ -273,7 +277,7 @@ h1 {
   box-shadow: 0px 1px 1px 0 #666666, 0px 1px 1px 0 #666666;
 }
 
-.activate_button:focus {
+.activate_button:focus, .preview_button:focus {
   outline: 0;
   background-color: #3A3A3A;
 }

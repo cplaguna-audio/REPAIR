@@ -127,7 +127,7 @@
   // intervals is in seconds.
   function ConcatenateIntervals(x, intervals, sample_rate) {
     var y = [];
-    for(var interval_idx = 0; interval_idx < intervals.length; intervals++) {
+    for(var interval_idx = 0; interval_idx < intervals.length; interval_idx++) {
       var interval_start_seconds = intervals[interval_idx].start;
       var interval_stop_seconds = intervals[interval_idx].stop;
 

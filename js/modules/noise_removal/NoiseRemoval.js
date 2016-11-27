@@ -41,8 +41,9 @@
               FFTWrapper,
               SignalProcessing) {
 
-  function RMSThreshold(x, threshold_amplitude, block_size, hop_size) {
+  function RMSThreshold(x, threshold_amplitude, block_size, hop_size, min_length_samples) {
     var channel_length = x.length;
+    var min_length_blocks = Math.floor(((min_length_samples - block_size) / hop_size) + 1);
 
     var block_idx = 0;
     var cur_block = new Float32Array(block_size);
@@ -71,8 +72,10 @@
       block_idx++;
     }
 
+    // Thin all intervals shorter than the minimum block length.
+    var thin_length = min_length_blocks - 1;
     var noise_intervals = ClipIntervalUtilities.FlagsToIntervals(noise_flags);
-
+    noise_intervals = ClipIntervalUtilities.ThinIntervals(noise_intervals, thin_length);
     return noise_intervals;
   }
 

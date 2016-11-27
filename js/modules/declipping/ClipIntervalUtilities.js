@@ -148,6 +148,7 @@
     return merged_intervals;
   }
 
+  // Removes all intervals that are |thin_length| or shorter.
   function ThinIntervals(clip_intervals, thin_length) {
     var num_intervals = clip_intervals.length;
     var new_intervals = [];

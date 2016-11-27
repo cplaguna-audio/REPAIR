@@ -41,8 +41,15 @@ define([
 
   var MAX_NUM_CHANNELS = 2;
 
+  var PREVIEW_BLOCK_SIZE_SECONDS = 3.5;
+  var PREVIEW_HOP_SIZE_SECONDS = 0.2;
+
+  var PREVIEW_INTERVAL = [];
+
+  var INITIAL_NOISE_THRESHOLD_PERCENTAGE = 10;
   var NOISE_REMOVAL_BLOCK_SIZE = 2048;
   var NOISE_REMOVAL_HOP_SIZE = 512;
+  var NOISE_INTERVAL_MIN_LENGTH_SECONDS = 0.3;
 
   var DECLIP_BLOCK_SIZE = 512;
   var DECLIP_HOP_SIZE = 128;
@@ -57,6 +64,9 @@ define([
                 did_declip_long_bursts: false,
                 did_profile_noise: false,
                 did_remove_noise: false,
+                did_find_preview: false,
+
+                showing_noise_profile: true,
 
                 declip_active: false,
                 noise_removal_active: false,
@@ -67,14 +77,16 @@ define([
 
   // The audio uploaded by the user.
   var INPUT_AUDIO_BUFFER;  
+  var PREVIEW_INPUT_AUDIO_BUFFER;
 
   // The processed audio.
   var PROCESSED_AUDIO_BUFFER;
+  var PREVIEW_PROCESSED_AUDIO_BUFFER;
 
   // The profile of the stationary noise that the user selected (for noise
   // removal).
   var NOISE_PROFILE; // Interval manually selected by user.
-  var NOISE_PROFILE_INTERVALS;
+  var NOISE_PROFILE_INTERVALS = [];
 
   var WAVEFORM_INTERACTOR;
 
@@ -84,6 +96,7 @@ define([
 
   // Array(channels) of array of known_points({ magnitude, time }).
   var KNOWN_POINTS;
+  var PREVIEW_KNOWN_POINTS;
 
   var FILE_NAME = "";
   var PROGRESS_BAR_JQUERRY_ELEMENT;
@@ -172,13 +185,22 @@ define([
       AUDIO_CONTEXT: AUDIO_CONTEXT,
 
       INPUT_AUDIO_BUFFER: INPUT_AUDIO_BUFFER,
+      PREVIEW_INPUT_AUDIO_BUFFER: PREVIEW_INPUT_AUDIO_BUFFER,
       PROCESSED_AUDIO_BUFFER: PROCESSED_AUDIO_BUFFER,
+      PREVIEW_PROCESSED_AUDIO_BUFFER: PREVIEW_PROCESSED_AUDIO_BUFFER,
       NOISE_PROFILE: NOISE_PROFILE,
       NOISE_PROFILE_INTERVALS: NOISE_PROFILE_INTERVALS,
+      INITIAL_NOISE_THRESHOLD_PERCENTAGE: INITIAL_NOISE_THRESHOLD_PERCENTAGE,
+      NOISE_INTERVAL_MIN_LENGTH_SECONDS: NOISE_INTERVAL_MIN_LENGTH_SECONDS,
+
+      PREVIEW_BLOCK_SIZE_SECONDS: PREVIEW_BLOCK_SIZE_SECONDS,
+      PREVIEW_HOP_SIZE_SECONDS: PREVIEW_HOP_SIZE_SECONDS,
+      PREVIEW_INTERVAL: PREVIEW_INTERVAL,
 
       SHORT_CLIP_INTERVALS: SHORT_CLIP_INTERVALS,
       LONG_CLIP_INTERVALS: LONG_CLIP_INTERVALS,
       KNOWN_POINTS: KNOWN_POINTS,
+      PREVIEW_KNOWN_POINTS: PREVIEW_KNOWN_POINTS,
 
       FILE_NAME: FILE_NAME,
       PROGRESS_BAR_ELEMENT: PROGRESS_BAR_ELEMENT,

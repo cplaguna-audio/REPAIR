@@ -77,10 +77,35 @@ define([
     return mono_channel;
   }
 
+  /*
+   * Return a new audio buffer with only samples within the provided interval.
+   * interval: { start: x, stop: y }
+   */
+  function CropBuffer(audio_buffer, interval, audio_context) {
+
+    var num_channels = audio_buffer.numberOfChannels;
+    var sample_rate = audio_buffer.sampleRate;
+    var buffer_length = interval.stop - interval.start + 1;
+    var new_buffer = audio_context.createBuffer(num_channels, buffer_length, sample_rate);
+
+    for(var channel_idx = 0; channel_idx < num_channels; channel_idx++) {
+      cur_input_channel = audio_buffer.getChannelData(channel_idx);
+      cur_output_channel = new_buffer.getChannelData(channel_idx);
+      var write_idx = 0;
+      for (var read_idx = interval.start; read_idx <= interval.stop; read_idx++ ) {
+        cur_output_channel[write_idx] = cur_input_channel[read_idx];
+        write_idx++;
+      }
+    }
+
+    return new_buffer;
+  }
+
   /* Public variables go here. */
   return {
       CopyAudioBuffer: CopyAudioBuffer,
-      AudioBufferToMono: AudioBufferToMono
+      AudioBufferToMono: AudioBufferToMono,
+      CropBuffer: CropBuffer
   };
 
 

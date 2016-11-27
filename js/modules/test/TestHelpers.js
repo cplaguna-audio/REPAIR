@@ -35,6 +35,10 @@ define([
   /* Includes go here. */
   ], function() {
 
+  function EqualityTolerance(x, y, t) {
+    return Math.abs(x - y) < t;
+  }
+
   function MatrixEquality(x, y) {
     if(x.length != y.length) {
       return false;
@@ -112,6 +116,7 @@ define([
 
   /* Public variables go here. */
   return {
+    EqualityTolerance: EqualityTolerance,
     MatrixEquality: MatrixEquality,
     ArrayEquality: ArrayEquality,
     ArrayEqualityTolerance: ArrayEqualityTolerance,

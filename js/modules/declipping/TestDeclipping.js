@@ -59,6 +59,7 @@
     tests_pass = tests_pass && TestEnlargeIntervals();
     tests_pass = tests_pass && TestAreOverlapping();
     tests_pass = tests_pass && TestGetClipSegments();
+    tests_pass = tests_pass && TestFlagsToIntervals();
 
     return tests_pass;
   }
@@ -396,6 +397,26 @@
     if(!TestHelpers.ArrayEquality(result_2, correct_2)) {
       console.log('Test Failed: TestRangeToIndices() #2');
       console.log(result_2);
+      tests_pass = false;
+    }
+
+    return tests_pass;
+  }
+
+  function TestFlagsToIntervals() {
+    var tests_pass = true;
+
+    var flags = [0, 0, 1, 1, 1, 0, 1, 0, 0, 1, 1, 0];
+
+    var correct = [
+      {start: 2, stop: 5},
+      {start: 6, stop: 7},
+      {start: 9, stop: 11}];
+
+    var result = ClipIntervalUtilities.FlagsToIntervals(flags); 
+    if(!TestHelpers.ClipIntervalEquality(result, correct)) {
+      console.log('Test Failed: TestFlagsToIntervals() #1');
+      console.log(result);
       tests_pass = false;
     }
 
