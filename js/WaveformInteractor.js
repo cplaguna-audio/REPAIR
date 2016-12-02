@@ -52,9 +52,11 @@
     this.current_zoom = 1;  // 1 = full_screen, 2 = 2 * full_screen, etc.
 
     this.original_wavesurfer;
+    this.original_timeline;
     this.original_audio_element;
 
     this.processed_wavesurfer;
+    this.processed_timeline;
     this.processed_audio_element;
     this.original_on;
 
@@ -97,6 +99,8 @@
           container: me.original_audio_element
         });
 
+        me.original_timeline = timeline;
+
         var zoomed_out_scale = me.CONTENT_WIDTH_PIXELS / me.original_wavesurfer.getDuration();
         me.original_wavesurfer.zoom(zoomed_out_scale);
       });
@@ -114,12 +118,14 @@
           console.log('proc ready');
         }
 
-        var timeline = Object.create(WaveSurfer.Timeline);
+        timeline = Object.create(WaveSurfer.Timeline);
 
         timeline.init({
           wavesurfer: me.processed_wavesurfer,
           container: me.processed_audio_element
         });
+
+        me.processed_timeline = timeline;
 
         var zoomed_out_scale = me.CONTENT_WIDTH_PIXELS / me.processed_wavesurfer.getDuration();
         me.processed_wavesurfer.zoom(zoomed_out_scale);
@@ -426,6 +432,16 @@
 
       this.EnableInteraction();
     };
+
+    this.Empty = function() {
+      this.Flush();
+      this.ClearNoiseProfileRegions();
+      this.original_wavesurfer.empty();
+      this.original_timeline.destroy();
+
+      this.processed_wavesurfer.empty();
+      this.processed_timeline.destroy();
+    }
 
     this.UpdateInputAudio = function(input_audio_buffer, callback) {
       console.log("UpdateInputAudio()");

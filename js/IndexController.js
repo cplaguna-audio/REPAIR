@@ -113,17 +113,25 @@ define([
   function PluginImageClicked(plugin_options_view, plugin_tab) {
     var plugin_options_view = 0;
     var plugin_tab = 0;
+    var module_button = 0;
+    var module_bypass_button = 0;
     if(this.id === "declip_image") {
       plugin_options_view = document.getElementById("declip_options_view");
       plugin_tab = document.getElementById("declip_tab");
+      module_button = document.getElementById("declip_image");
+      module_bypass_button = document.getElementById("declip_bypass_image");
     }
     else if(this.id === "noise_removal_image") {
       plugin_options_view = document.getElementById("noise_removal_options_view");
       plugin_tab = document.getElementById("noise_removal_tab");
+      module_button = document.getElementById("noise_removal_image");
+      module_bypass_button = document.getElementById("noise_removal_bypass_image");
     }
     else if(this.id === "auto_eq_image") {
       plugin_options_view = document.getElementById("auto_eq_options_view");
       plugin_tab = document.getElementById("auto_eq_tab");
+      module_button = document.getElementById("auto_eq_image");
+      module_bypass_button = document.getElementById("auto_eq_bypass_image");
     }
 
     var should_set = plugin_options_view.style.display === "none";
@@ -132,6 +140,22 @@ define([
     for(var idx = 0; idx < options_views.length; idx++) {
       var options_view = options_views[idx];
       options_view.style.display = "none";
+    }
+
+    var module_buttons = document.getElementsByClassName("module_button");
+    for(var idx = 0; idx < module_buttons.length; idx++) {
+      var cur_module_button = module_buttons[idx];
+      if(cur_module_button.classList.contains("options_enabled")) {
+        cur_module_button.classList.remove("options_enabled");
+      }
+    }
+
+    var module_bypass_buttons = document.getElementsByClassName("bypass_image");
+    for(var idx = 0; idx < module_bypass_buttons.length; idx++) {
+      var cur_module_bypass_button = module_bypass_buttons[idx];
+      if(cur_module_bypass_button.classList.contains("options_enabled")) {
+        cur_module_bypass_button.classList.remove("options_enabled");
+      }
     }
 
     var tabs = document.getElementsByClassName("tab");
@@ -143,24 +167,36 @@ define([
     if(should_set) {
       plugin_options_view.style.display = "block";
       plugin_tab.style.display = "inline-block";
+      module_button.classList.add("options_enabled")
+      module_bypass_button.classList.add("options_enabled")
     }
   }
 
-  function ActivateClicked(plugin_string, activate_button) {
-
-    var should_activate = activate_button.firstChild.data === "Activate";
-
-    if(plugin_string === "declip") {
-      IndexGlobal.STATE.declip_active = should_activate;
-    }
-    else if(plugin_string === "noise_removal") {
-      IndexGlobal.STATE.noise_removal_active = should_activate;
-    }
-    else if(plugin_string === "auto_eq") {
-      IndexGlobal.STATE.auto_eq_active = should_activate;
-    }
-
+  function DeclipActivateClicked() {
+    IndexGlobal.STATE.declip_active = !IndexGlobal.STATE.declip_active;
     RefreshIndex();
+  }
+
+  function NoiseRemovalActivateClicked() {
+    IndexGlobal.STATE.noise_removal_active = !IndexGlobal.STATE.noise_removal_active;
+    RefreshIndex();
+  }
+
+  function AutoEqActivateClicked() {
+    IndexGlobal.STATE.auto_eq_active = !IndexGlobal.STATE.auto_eq_active;
+    RefreshIndex();
+  }
+
+  function ToggleDropdown() {
+    var dropdown_content = $(".dropdown-content");
+    for(var idx = 0; idx < dropdown_content.length; idx++) {
+      var cur_content = dropdown_content[idx];
+      cur_content.classList.toggle("dropdown-show")
+    }
+  }
+
+  function LoadExampleClicked() {
+    ToggleDropdown();
   }
 
   function DisplayNoiseProfileClicked() {
@@ -177,7 +213,44 @@ define([
     RefreshIndex();
   }
 
+  function ClearAudioClicked() {
+    IndexGlobal.WAVEFORM_INTERACTOR.Empty();
+    FlushIndex();
+    RefreshIndex();
+    $("#audio_input")[0].value = null;
+  }
+
+  function AudioInputChanged() {
+    IndexGlobal.FILE_NAME = "clipping_example.wav";
+    var the_file = this.files[0];
+    if(!the_file) {
+      return;
+    }
+
+    var reader = new FileReader();
+    reader.onload = function(ev) {
+      FlushIndex();
+      IndexGlobal.AUDIO_CONTEXT.decodeAudioData(ev.target.result, function(buffer) {
+        IndexGlobal.INPUT_AUDIO_BUFFER = buffer;
+        IndexGlobal.PROCESSED_AUDIO_BUFFER = WebAudioUtils.CopyAudioBuffer(IndexGlobal.AUDIO_CONTEXT, IndexGlobal.INPUT_AUDIO_BUFFER);
+        IndexGlobal.STATE.audio_loaded = true;
+        action_queue.push(DoDetectClipping);
+        action_queue.push(DoNormalizeInput);
+        action_queue.push(DoNormalizeOutput);
+        UpdateNoiseProfileIntervals(IndexGlobal.INITIAL_NOISE_THRESHOLD_PERCENTAGE);
+        action_queue.push(DoNoiseProfile);
+        action_queue.push(DoFindPreview);
+        DoFirstAction();
+      });
+      IndexGlobal.WAVEFORM_INTERACTOR.LoadAudio(the_file);
+      RefreshIndex();
+    }
+    reader.readAsArrayBuffer(the_file);
+
+  }
+
   function ClippingExampleClicked() {
+    ToggleDropdown();
     var blob = null;
     var xhr = new XMLHttpRequest(); 
     xhr.open("GET", "resources/audio_examples/1/1_clipped.wav"); 
@@ -210,6 +283,7 @@ define([
   }
 
   function NoisyExampleClicked() {
+    ToggleDropdown();
     var blob = null;
     var xhr = new XMLHttpRequest(); 
     xhr.open("GET", "resources/audio_examples/noise_removal/noisy_example.wav"); 
@@ -242,6 +316,7 @@ define([
   }
 
 function EQExampleClicked() {
+    ToggleDropdown();
     var blob = null;
     var xhr = new XMLHttpRequest(); 
     xhr.open("GET", "resources/audio_examples/perceptual_eq/eq_example.wav"); 
@@ -334,6 +409,11 @@ function EQExampleClicked() {
     IndexGlobal.WAVEFORM_INTERACTOR.AddNoiseProfileRegions(new_intervals);
 
     $("#noise_threshold_display").html(threshold_percentage.toString() + "%");
+    var noise_threshold_slider = $("#noise_threshold_slider")[0];
+    if(noise_threshold_slider.value != threshold_percentage) {
+      noise_threshold_slider.value = threshold_percentage;
+    }
+    
     if(IndexGlobal.NOISE_PROFILE_INTERVALS.length > 0) {
       IndexGlobal.STATE.noise_removal_active = true;
     }
@@ -606,15 +686,35 @@ function EQExampleClicked() {
 
   // Called after the <body> has been loaded.
   function InitIndex() {  
+ 
+    // Close the dropdown menu if the user clicks outside of it
+    $("html")[0].addEventListener("click", function(event) {
+      if (!event.target.matches('#load_example_button')) {
+        var dropdowns = document.getElementsByClassName("dropdown-content");
+        for (var i = 0; i < dropdowns.length; i++) {
+          var openDropdown = dropdowns[i];
+          if (openDropdown.classList.contains('dropdown-show')) {
+            openDropdown.classList.remove('dropdown-show');
+          }
+        }
+      }
+    });
 
     // Add the click handlers.
+    $("#load_example_button").click(LoadExampleClicked);
+
     $("#clipping_example").click(function() { ClippingExampleClicked(); });
     $("#noisy_example").click(function() { NoisyExampleClicked(); });
     $("#eq_example").click(function() { EQExampleClicked(); });
 
+    $("#declip_image").click(PluginImageClicked);
+    $("#noise_removal_image").click(PluginImageClicked);
+    $("#auto_eq_image").click(PluginImageClicked);
+
+    $("#audio_input")[0].addEventListener("change", AudioInputChanged);
+
     $("#repair_button").click(function() { RepairClicked(); });
     $("#noise_profile_button").click(function() { NoiseProfileClicked(); });
-    $("#download_audio_button").click(function() { SaveOutputClicked(); });
 
     var noise_threshold_slider = $("#noise_threshold_slider");
     var noise_threshold_display = $("#noise_threshold_display");
@@ -632,23 +732,11 @@ function EQExampleClicked() {
     });
     noise_threshold_slider[0].value = IndexGlobal.INITIAL_NOISE_THRESHOLD_PERCENTAGE;
 
-    $("#declip_activate_button").click(function() {
-      var activate_button = document.getElementById("declip_activate_button");
-      ActivateClicked("declip", activate_button); 
-    });
-    $("#noise_removal_activate_button").click(function() {
-      var activate_button = document.getElementById("noise_removal_activate_button");
-      ActivateClicked("noise_removal", activate_button); 
-    });
-    $("#auto_eq_activate_button").click(function() {
-      var activate_button = document.getElementById("auto_eq_activate_button");
-      ActivateClicked("auto_eq", activate_button); 
-    });
+    $("#declip_activate_button").click(DeclipActivateClicked);
+    $("#noise_removal_activate_button").click(NoiseRemovalActivateClicked);
+    $("#auto_eq_activate_button").click(AutoEqActivateClicked);
 
-    var preview_buttons = $(".preview_button");
-    for(var idx = 0; idx < preview_buttons.length; idx++) {
-      preview_buttons[idx].addEventListener('click', DoPreview);
-    }
+    $("#preview_button")[0].addEventListener('click', DoPreview);
 
     var options_views = $(".options_view");
     for(var idx = 0; idx < options_views.length; idx++) {
@@ -743,14 +831,14 @@ function EQExampleClicked() {
         }
     };
 
-    var dropTarget = document.querySelector('#waveform_view');
+    var dropTarget = document.querySelector('#repair_container');
     Object.keys(handlers).forEach(function (event) {
         dropTarget.addEventListener(event, handlers[event]);
     });
 
     var screen_width_pixels = window.screen.width;
     var CONTENT_WIDTH_PIXELS = screen_width_pixels * IndexGlobal.CONTENT_WIDTH_PERCENTAGE;
-    var content_element = document.getElementById('my_content');
+    var content_element = document.getElementById('repair_content');
     content_element.style.width = CONTENT_WIDTH_PIXELS.toString() + "px";
 
     // Progress bar.
@@ -762,11 +850,12 @@ function EQExampleClicked() {
     IndexGlobal.PROGRESS_BAR_ELEMENT = document.getElementById('audio_processing_progress_popup');
 
     // Waveform interactor.
-    var waveform_view_element = document.getElementById('waveform_view');
-    var padding = window.getComputedStyle(waveform_view_element, null).getPropertyValue('padding');
+    var repair_container_element = document.getElementById('repair_container');
+    var padding = window.getComputedStyle(repair_container_element, null).getPropertyValue('padding');
     padding = padding.substring(0, padding.length - 2);
-    var waveform_view_width_px = CONTENT_WIDTH_PIXELS - (2 * Number(padding)) - 10;
-    IndexGlobal.WAVEFORM_INTERACTOR = new WaveformInteractor.WaveformInteractor(waveform_view_width_px);
+    var repair_container_width_px = $("#original_waveform_container")[0].clientWidth - padding;
+
+    IndexGlobal.WAVEFORM_INTERACTOR = new WaveformInteractor.WaveformInteractor(repair_container_width_px);
     IndexGlobal.WAVEFORM_INTERACTOR.Init("original_audio_waveform", "processed_audio_waveform");
     
     // Clear state.
@@ -1164,14 +1253,19 @@ function EQExampleClicked() {
    */
   function OpenProgressBar() {
     IndexGlobal.PROGRESS_BAR_JQUERRY_ELEMENT.w2popup({showClose: false, modal:true});
+    $("#progress_title")[0].innerHTML = "";
+
   }
   function CloseProgressBar() {
     w2popup.close();
+    $("#progress_title")[0].innerHTML = "Processing Audio";
   }
 
   function ResetProgressBar(progress_text) {
-    var progress_title_element = document.getElementById('progress_title');
-    progress_title_element.innerHTML = progress_text;
+    var progress_title_elements = $("#popup_subtitle");
+    for(var idx = 0; idx < progress_title_elements.length; idx++) {
+      progress_title_elements[idx].innerHTML = progress_text;
+    }
     UpdateProgressBar(0);
   }
 
@@ -1199,8 +1293,6 @@ function EQExampleClicked() {
   // Decide which buttons should be enable/disabled depending on the current
   // state.
   function RefreshIndex() {
-    var file_name_element = document.getElementById("file_name");
-    file_name_element.innerHTML = IndexGlobal.FILE_NAME;
 
     if(IndexGlobal.NOISE_PROFILE_INTERVALS.length == 0) {
       IndexGlobal.STATE.noise_removal_active = false;
@@ -1210,6 +1302,7 @@ function EQExampleClicked() {
     // 1. Check to allow wavesurfer interaction.
     if(ShouldAllowWaveformInteraction()) {
       IndexGlobal.WAVEFORM_INTERACTOR.EnableInteraction();
+      $("#drag_container")[0].style.display = "none";
 
       var toggle_waveform_button = document.getElementById("toggle_waveform_button");
       toggle_waveform_button.removeEventListener('click', ToggleWaveformHandler);
@@ -1226,6 +1319,11 @@ function EQExampleClicked() {
       play_selection_button.addEventListener('click', PlaySelectionHandler);
       play_selection_button.style.opacity = "1";
 
+      var clear_audio_button = document.getElementById("clear_audio_button");
+      clear_audio_button.removeEventListener('click', ClearAudioClicked);
+      clear_audio_button.addEventListener('click', ClearAudioClicked);
+      clear_audio_button.style.opacity = "1";
+
       var zoom_in_button = document.getElementById("zoom_in_button");
       zoom_in_button.removeEventListener('click', ZoomInHandler);
       zoom_in_button.addEventListener('click', ZoomInHandler);
@@ -1237,14 +1335,27 @@ function EQExampleClicked() {
       zoom_out_button.style.opacity = "1";
 
       var repair_button = document.getElementById("repair_button");
+      var preview_button = $("#preview_button")[0];
+
       if(NoPluginsActive()) {
         repair_button.style.opacity = "1";
         repair_button.disabled = false;
+
+        preview_button.style.opacity = "1";
+        preview_button.disabled = false;
       }
       else {
         repair_button.style.opacity = "0.2";
         repair_button.disabled = true;
+
+        preview_button.style.opacity = "0.2";
+        preview_button.disabled = true;
       }
+
+      var download_button = document.getElementById("download_audio_button");
+      download_button.style.opacity = "1";
+      download_button.removeEventListener('click', SaveOutputClicked);
+      download_button.addEventListener('click', SaveOutputClicked);
 
       IndexGlobal.WAVEFORM_INTERACTOR.original_audio_element.addEventListener('click', function() {
         if(!IndexGlobal.WAVEFORM_INTERACTOR.original_on) {
@@ -1258,13 +1369,16 @@ function EQExampleClicked() {
         }
       })
 
-      var plugin_images = document.getElementsByClassName("plugin_image");
-      for(var i = 0; i < plugin_images.length; i++)
+      var module_buttons = document.getElementsByClassName("module_button");
+      var bypass_images = document.getElementsByClassName("bypass_image");
+      for(var i = 0; i < module_buttons.length; i++)
       {
-        var plugin_image = plugin_images[i];
-        plugin_image.removeEventListener('click', PluginImageClicked);
-        plugin_image.addEventListener('click', PluginImageClicked);
-        plugin_image.style.opacity = "1";
+        var module_button = module_buttons[i];
+        module_button.disabled = false;
+        module_button.style.opacity = "1";
+
+        var bypass_image = bypass_images[i];
+        bypass_image.style.opacity = "1";
       }
 
       var noise_removal_activate_button = document.getElementById("noise_removal_activate_button");
@@ -1278,35 +1392,18 @@ function EQExampleClicked() {
         noise_removal_activate_button.disabled = true;
       }
 
-      var declip_preview_button = $("#declip_preview_button")[0];
-      if(IndexGlobal.STATE.declip_active) {
-        declip_preview_button.style.opacity = "1";
-        declip_preview_button.disabled = false;
-      }
-      else {
-        declip_preview_button.style.opacity = "0.2";
-        declip_preview_button.disabled = true;
-      }
+      var declip_img = document.getElementById("declip_bypass_image");
+      declip_img.removeEventListener("click", DeclipActivateClicked);
+      declip_img.addEventListener("click", DeclipActivateClicked);
 
-      var noise_removal_preview_button = $("#noise_removal_preview_button")[0];
-      if(IndexGlobal.STATE.did_profile_noise && IndexGlobal.STATE.noise_removal_active) {
-        noise_removal_preview_button.style.opacity = "1";
-        noise_removal_preview_button.disabled = false;
-      }
-      else {
-        noise_removal_preview_button.style.opacity = "0.2";
-        noise_removal_preview_button.disabled = true;
-      }
+      var noise_removal_image = document.getElementById("noise_removal_bypass_image");
+      noise_removal_image.removeEventListener("click", NoiseRemovalActivateClicked);
+      noise_removal_image.addEventListener("click", NoiseRemovalActivateClicked);
 
-      var auto_eq_preview_button = $("#auto_eq_preview_button")[0];
-      if(IndexGlobal.STATE.auto_eq_active) {
-        auto_eq_preview_button.style.opacity = "1";
-        auto_eq_preview_button.disabled = false;
-      }
-      else {
-        auto_eq_preview_button.style.opacity = "0.2";
-        auto_eq_preview_button.disabled = true;
-      }
+      var auto_eq_img = document.getElementById("auto_eq_bypass_image");
+      auto_eq_img.removeEventListener("click", AutoEqActivateClicked);
+      auto_eq_img.addEventListener("click", AutoEqActivateClicked);
+
       /*var show_noise_profile_button = document.getElementById("display_noise_profile_button");
       show_noise_profile_button.disabled = false;
       show_noise_profile_button.style.opacity = "1";
@@ -1319,6 +1416,21 @@ function EQExampleClicked() {
     }
     else {
       IndexGlobal.WAVEFORM_INTERACTOR.DisableInteraction();
+      $("#drag_container")[0].style.display = "block";
+     
+      var options_views = $(".options_view");
+      for(var idx = 0; idx < options_views.length; idx++) {
+        options_views[idx].style.display = "none";
+      }
+
+      var tabs = $(".tab");
+      for(var idx = 0; idx < tabs.length; idx++) {
+        tabs[idx].style.display = "none";
+      }
+
+      var download_button = document.getElementById("download_audio_button");
+      download_button.style.opacity = "0.2";
+      download_button.removeEventListener('click', SaveOutputClicked);
 
       /*var show_noise_profile_button = document.getElementById("display_noise_profile_button");
       show_noise_profile_button.disabled = true;
@@ -1326,12 +1438,19 @@ function EQExampleClicked() {
 
       var toggle_waveform_button = document.getElementById("toggle_waveform_button");
       toggle_waveform_button.style.opacity = "0.2";
+      toggle_waveform_button.removeEventListener('click', ToggleWaveformHandler);
 
       var play_pause_button = document.getElementById("play_pause_button");
       play_pause_button.style.opacity = "0.2";
+      play_pause_button.removeEventListener('click', PlayPauseHandler);
 
       var play_selection_button = document.getElementById("play_selection_button");
       play_selection_button.style.opacity = "0.2";
+      play_selection_button.removeEventListener('click', PlaySelectionHandler);
+
+      var clear_audio_button = document.getElementById("clear_audio_button");
+      clear_audio_button.removeEventListener('click', ClearAudioClicked);
+      clear_audio_button.style.opacity = "0.2";
 
       var zoom_in_button = document.getElementById("zoom_in_button");
       zoom_in_button.removeEventListener('click', ZoomInHandler);
@@ -1347,55 +1466,80 @@ function EQExampleClicked() {
         processing_buttons[i].disabled = true;
       } 
 
-      var plugin_images = document.getElementsByClassName("plugin_image");
-      for(var i = 0; i < plugin_images.length; i++)
+      var module_buttons = document.getElementsByClassName("module_button");
+      var bypass_images = document.getElementsByClassName("bypass_image");
+      for(var i = 0; i < module_buttons.length; i++)
       {
-        var plugin_image = plugin_images[i];
-        plugin_image.removeEventListener('click', PluginImageClicked);
-        plugin_image.style.opacity = "0.2";
+        var module_button = module_buttons[i];
+        module_button.disabled = true;
+        module_button.style.opacity = "0.2";
+
+        var bypass_image = bypass_images[i];
+        bypass_image.style.opacity = "0.2";
       }
 
-      var preview_buttons = $(".preview_button");
-      for(var idx = 0; idx < preview_buttons.length; idx++) {
-        preview_buttons[idx].style.opacity = 0.2;
-        preview_buttons[idx].disabled = true;
-      }
+      var declip_img = document.getElementById("declip_bypass_image");
+      declip_img.removeEventListener("click", DeclipActivateClicked);
+
+      var noise_removal_image = document.getElementById("noise_removal_bypass_image");
+      noise_removal_image.removeEventListener("click", NoiseRemovalActivateClicked);
+
+      var auto_eq_img = document.getElementById("auto_eq_bypass_image");
+      auto_eq_img.removeEventListener("click", AutoEqActivateClicked);
     }
 
     // Plugin activations.
     var declip_activate_button = document.getElementById("declip_activate_button");
-    var declip_img = document.getElementById("declip_image");
+    var declip_img = document.getElementById("declip_bypass_image");
     if(IndexGlobal.STATE.declip_active) {
-      declip_img.src = "resources/DeclipIconOn.png";
-      declip_activate_button.firstChild.data = "Deactivate";
+      declip_img.src = "resources/transport/active.png";
+      declip_img.style.marginBottom = "0in";
+      declip_img.style.borderBottomWidth = "0px";
+      $("#declip_image")[0].style.borderTopWidth = "0px";
+      declip_activate_button.firstChild.data = "On";
     }
     else {
-      declip_img.src = "resources/DeclipIconOff.png";
-      declip_activate_button.firstChild.data = "Activate";
+      declip_img.src = "resources/transport/inactive.png";
+      declip_img.style.marginBottom = "0.05in";
+      declip_img.style.borderBottomWidth = "1px";
+      $("#declip_image")[0].style.borderTopWidth = "1px";
+      declip_activate_button.firstChild.data = "Off";
     }
 
     var noise_removal_activate_button = document.getElementById("noise_removal_activate_button");
-    var noise_removal_div = document.getElementById("noise_removal_image");
+    var noise_removal_bypass_image = document.getElementById("noise_removal_bypass_image");
+    var noise_removal_image = document.getElementById("noise_removal_image");
     if(IndexGlobal.STATE.noise_removal_active) {
-      noise_removal_div.src = "resources/RemoveNoiseIconOn.png";
-      noise_removal_activate_button.firstChild.data = "Deactivate";
+      noise_removal_bypass_image.src = "resources/transport/active.png";
+      noise_removal_bypass_image.style.marginBottom = "0in";   
+      noise_removal_bypass_image.style.borderBottomWidth = "0px";
+      noise_removal_image.style.borderTopWidth = "0px";
+      noise_removal_activate_button.firstChild.data = "On";
     }
     else {
-      noise_removal_div.src = "resources/RemoveNoiseIconOff.png";
-      noise_removal_activate_button.firstChild.data = "Activate";
+      noise_removal_bypass_image.src = "resources/transport/inactive.png";
+      noise_removal_bypass_image.style.marginBottom = "0.05in";
+      noise_removal_bypass_image.style.borderBottomWidth = "1px";
+      noise_removal_image.style.borderTopWidth = "1px";
+      noise_removal_activate_button.firstChild.data = "Off";
     }
 
     var auto_eq_activate_button = document.getElementById("auto_eq_activate_button");
-    var auto_eq_img = document.getElementById("auto_eq_image");
+    var auto_eq_img = document.getElementById("auto_eq_bypass_image");
     if(IndexGlobal.STATE.auto_eq_active) {
-      auto_eq_img.src = "resources/AutoEQIconOn.png";
-      auto_eq_activate_button.firstChild.data = "Deactivate";
+      auto_eq_img.src = "resources/transport/active.png";
+      auto_eq_img.style.marginBottom = "0in";
+      auto_eq_img.style.borderBottomWidth = "0px";
+      $("#auto_eq_image")[0].style.borderTopWidth = "0px";
+      auto_eq_activate_button.firstChild.data = "On";
     }
     else {
-      auto_eq_img.src = "resources/AutoEQIconOff.png";
-      auto_eq_activate_button.firstChild.data = "Activate";
+      auto_eq_img.src = "resources/transport/inactive.png";
+      auto_eq_img.style.marginBottom = "0.05in";
+      auto_eq_img.style.borderBottomWidth = "1px";
+      $("#auto_eq_image")[0].style.borderTopWidth = "1px";
+      auto_eq_activate_button.firstChild.data = "Off";
     }
-
   }
 
   function FlushIndex() {

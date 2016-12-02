@@ -8,9 +8,11 @@
   padding-bottom: 5px;
   display: inline-block;
 }
+
 audio {
   text-align: center;
 }
+
 table {
   background-color: #EEEEEE;
   padding: 10px;
