@@ -429,6 +429,8 @@
       this.Flush();
       this.original_wavesurfer.loadBlob(audio_blob);
       this.processed_wavesurfer.loadBlob(audio_blob);
+      IndexGlobal.INPUT_AUDIO_BUFFER = this.original_wavesurfer.backend.buffer;
+      IndexGlobal.PROCESSED_AUDIO_BUFFER = this.processed_wavesurfer.backend.buffer;
 
       this.EnableInteraction();
     };

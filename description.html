@@ -3,43 +3,209 @@
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
   <meta http-equiv="Cache-control" content="no-cache">
+
+  <link rel="stylesheet" type="text/css" href="css/description.css">
+
+
+  <link rel="stylesheet" type="text/css" href="css/listening_examples.css">
+  <script src="../js/third_party/jquery/jquery-1.12.1.min.js"></script>
+  <script src="js/ListeningExamples.js"></script>
+
+
   <title>REPAIR</title>
 </head>
 <body>
-  <div>
-    <b>R</b>epair and <b>E</b>nhance <b>P</b>hone <b>A</b>udio on the <b>I</b>nte<b>R</b>net<p>
-  </div>
-  <div>
-    REPAIR is a web app for repairing and enhancing low quality audio files. Our inspiration 
-    comes from the large number of low quality concert recordings on YouTube. We would like to
-    enjoy these recordings, but too often, the audio is simply unlistenable! This is often
-    the fault of poor quality microphones in mobile phones. It is our hope that post-processing
-    these audio files can improve the listening experience. Think of REPAIR as an audio equivalent to Instagram
-    filters or video stabilization. Use our free audio processing modules to reduce clipping,
-    remove noise, and filter your audio. Then, compare the enhanced audio to the original, 
-    and when satisfied, download the result to your computer.<p>
-    Steps<p>
-    1. Upload an audio file. (Note that REPAIR is entirely client-side, so we will not be storing the audio anywhere besides your computer)<p>
-    2. Click the Declip button, the Noise Removal button, or Auto EQ button to open the option panel for that module. <p>
-    3. Modify the parameters (see below) specific to the module. <p>
-    4. Click "Activate" to enable the module. Active modules are shown in green, and inactive modules are shown in red. <p>
-    5. Click "Preview" to hear an exerpt of the repaired audio. All active modules will be processed before previewing. <p>
-    6. After activating all desired modules, click "Repair" to process the audio. This may take a few minutes, depending on the length of the file. <p>
-    7. Play the audio in our audio player and toggle between the original and the processed audio to compare the files. <p>
-    8. Click "Download" to download the processed audio to your computer.<p>
-  </div>
-  <div>Modules</div>
-  <div>
-    Declipping<p>
-    Talk about declipping.
-  </div>
-  <div>
-    Noise Removal<p>
-    Talk about declipping.
-  </div>
-  <div>
-    Perceptual Equalization<p>
-    Talk about declipping.
+  <div id="body_container">
+    <table id="title_table">
+      <tr>
+        <td class="title_td"></td>
+        <td class="title_td"><div class="header">REPAIR</div></td>
+        <td class="title_td" valign="top"><div id="description_link"><button id="description_link_button" class="link_button">Main Page</button></div></td>
+      </tr>
+    </table>
+    <div>
+      REPAIR (<b>R</b>epair and <b>E</b>nhance <b>P</b>hone <b>A</b>udio on the <b>I</b>nte<b>R</b>net) is a web app for repairing and enhancing low quality audio files. Our inspiration 
+      comes from the large number of low quality concert recordings on YouTube. We would like to
+      enjoy these recordings, but too often, the audio is simply unlistenable! This is often
+      the fault of poor quality microphones in mobile phones. It is our hope that post-processing
+      these audio files can improve the listening experience. Think of REPAIR as an audio equivalent to Instagram
+      filters or video stabilization. Use our free audio processing modules to reduce clipping,
+      remove noise, and filter your audio. Then, compare the enhanced audio to the original, 
+      and when satisfied, download the result to your computer.<p>
+      <div class="gray_container">
+        <div class="small_header">Instructions</div><p>
+        <ol id="instructions_ol">
+          <li>Upload an audio file. (Note that REPAIR is entirely client-side, so we will not be storing the audio anywhere besides your computer)</li>
+          <li>Click the Declip button, the Noise Removal button, or Auto EQ button to open the option panel for that module. </li>
+          <li>Modify the parameters (see below) specific to the module. </li>
+          <li>Click "Activate" to enable the module. Active modules are shown in green, and inactive modules are shown in red. </li>
+          <li>Click "Preview" to hear an exerpt of the repaired audio. All active modules will be processed before previewing. </li>
+          <li>After activating all desired modules, click "Repair" to process the audio. This may take a few minutes, depending on the length of the file. </li>
+          <li>Play the audio in our audio player and toggle between the original and the processed audio to compare the files. </li>
+          <li>Click "Download" to download the processed audio to your computer.</li>
+        </ol>
+      </div>
+    </div>
+    <div id="modules_header" class="header">Modules</div>
+    <div class="gray_container">
+      <div class="small_header">Declipping</div><p>
+      Declipping is the process of removing or reducing the perceptual effect of clipping
+      from clipped audio. It consists of two steps: clipping detection, where samples are
+      flagged as clipped or not clipped, and sample replacement, where all clipped samples 
+      are replaced with estimates of the original signal (or at least, estimates that
+      remove the perceptual effect of clipping). Note that clipping is not a one-to-one
+      mapping (multiple input amplitude values can be mapped to the same output amplitude
+      value), therefore it can be impossible to reconstruct the original signal without
+      making assumptions about properties of the input signal. <p>
+      To detect clipping, we inspect the amplitude histogram of the signal. A clipped signal
+      will have a local maxima near the clipping threshold, since all values beyond the threshold
+      get mapped at or near the clipping threshold. A non-clipped signal should have a peak at the DC
+      value and monotonically decrease to zero in both directions. Looking for the unnatural local
+      maxima allows us to estimate the clipping threshold, and wherever the signal rises above the
+      clipping threshold, we detect clipping. <p>
+      Our declipping algorithm assumes that the signal on either side of a clipping region
+      is stationary: the statistical properties of the signal do not change over time (at
+      least for short periods of time, say 30 milliseconds). This allows us to declip by linearly interpolating
+      blocks on either side of the clipped region. We do this bin by bin in the frequency domain.
+      We also assume that clipping does not modify the phase of the signal. We 
+      determined this heuristically by creating the phase examples below. <p>
+      For a formal description of our algorithm, see our AES publication: 
+      <i>Laguna, Christopher, and Alexander Lerch. "An Efficient Algorithm for Clipping Detection and Declipping Audio." (2016).</i>
+      This is available at http://www.gtcmt.gatech.edu/publications/music-informatics.
+      <div class="small_header">Listening Examples</div>
+      <div class="add_padding"></div>
+
+      <table id="listening_examples_table">
+        <tr>
+          <td class="listening_examples_td">
+            <div id="declipping_examples">
+              <div class="small_header">Declipping</div>
+              <div class="add_padding"></div>
+              <audio id="declipping_player" class="player" tabindex="0" controls="" type="audio/wav">
+                Sorry, your browser does not support HTML5 audio.
+              </audio>
+              <table id="declipping_playlist" class="listening_table">
+                <tr>
+                  <td>Example 1:</td>
+                  <td><a class="declipping_track" href="resources/audio_examples/declipping/1_clean.wav">Clean</a></td> 
+                  <td><a class="declipping_track" href="resources/audio_examples/declipping/1_clipped.wav">Clipped</a></td>
+                  <td><a class="declipping_track" href="resources/audio_examples/declipping/1_reconstructed.wav">Reconstructed</a></td>
+                </tr>
+                <tr>
+                  <td>Example 2:</td>
+                  <td><a class="declipping_track" href="resources/audio_examples/declipping/2_clean.wav">Clean</a></td> 
+                  <td><a class="declipping_track" href="resources/audio_examples/declipping/2_clipped.wav">Clipped</a></td>
+                  <td><a class="declipping_track" href="resources/audio_examples/declipping/2_reconstructed.wav">Reconstructed</a></td>
+                </tr>
+                <tr>
+                  <td>Example 3:</td>
+                  <td><a class="declipping_track" href="resources/audio_examples/declipping/3_clean.wav">Clean</a></td> 
+                  <td><a class="declipping_track" href="resources/audio_examples/declipping/3_clipped.wav">Clipped</a></td>
+                  <td><a class="declipping_track" href="resources/audio_examples/declipping/3_reconstructed.wav">Reconstructed</a></td>
+                </tr>
+                <tr>
+                  <td>Example 4:</td>
+                  <td><a class="declipping_track" href="resources/audio_examples/declipping/4_clean.wav">Clean</a></td> 
+                  <td><a class="declipping_track" href="resources/audio_examples/declipping/4_clipped.wav">Clipped</a></td>
+                  <td><a class="declipping_track" href="resources/audio_examples/declipping/4_reconstructed.wav">Reconstructed</a></td>
+                </tr>
+              </table>
+            </div>
+          </td>
+
+          <td class="listening_examples_td">
+            <div id="phase_examples">
+              <div class="small_header">Phase Tests</div>
+              <div class="add_padding"></div>
+              <audio id="phase_player" class="player" tabindex="0" controls preload="none" type="audio/wav">
+                Sorry, your browser does not support HTML5 audio.
+              </audio>
+              <table id="phase_playlist" class="listening_table">
+                <tr>
+                  <td>Example 1:</td>
+                  <td><a class="phase_track" href="resources/audio_examples/phase_tests/1_clean.wav">Clean</a></td> 
+                  <td><a class="phase_track" href="resources/audio_examples/phase_tests/1_clipped.wav">Clipped</a></td>
+                  <td><a class="phase_track" href="resources/audio_examples/phase_tests/1_reconstructed.wav">Reconstructed</a></td>
+                </tr>
+                <tr>
+                  <td>Example 2:</td>
+                  <td><a class="phase_track" href="resources/audio_examples/phase_tests/2_clean.wav">Clean</a></td> 
+                  <td><a class="phase_track" href="resources/audio_examples/phase_tests/2_clipped.wav">Clipped</a></td>
+                  <td><a class="phase_track" href="resources/audio_examples/phase_tests/2_reconstructed.wav">Reconstructed</a></td>
+                </tr>
+                <tr>
+                  <td>Example 3:</td>
+                  <td><a class="phase_track" href="resources/audio_examples/phase_tests/3_clean.wav">Clean</a></td> 
+                  <td><a class="phase_track" href="resources/audio_examples/phase_tests/3_clipped.wav">Clipped</a></td>
+                  <td><a class="phase_track" href="resources/audio_examples/phase_tests/3_reconstructed.wav">Reconstructed</a></td>
+                </tr>
+                <tr>
+                  <td>Example 4:</td>
+                  <td><a class="phase_track" href="resources/audio_examples/phase_tests/4_clean.wav">Clean</a></td> 
+                  <td><a class="phase_track" href="resources/audio_examples/phase_tests/4_clipped.wav">Clipped</a></td>
+                  <td><a class="phase_track" href="resources/audio_examples/phase_tests/4_reconstructed.wav">Reconstructed</a></td>
+                </tr>
+                <tr>
+                  <td>Example 5:</td>
+                  <td><a class="phase_track" href="resources/audio_examples/phase_tests/5_clean.wav">Clean</a></td> 
+                  <td><a class="phase_track" href="resources/audio_examples/phase_tests/5_clipped.wav">Clipped</a></td>
+                  <td><a class="phase_track" href="resources/audio_examples/phase_tests/5_reconstructed.wav">Reconstructed</a></td>
+                </tr>
+                <tr>
+                  <td>Example 6:</td>
+                  <td><a class="phase_track" href="resources/audio_examples/phase_tests/6_clean.wav">Clean</a></td> 
+                  <td><a class="phase_track" href="resources/audio_examples/phase_tests/6_clipped.wav">Clipped</a></td>
+                  <td><a class="phase_track" href="resources/audio_examples/phase_tests/6_reconstructed.wav">Reconstructed</a></td>
+                </tr>
+                <tr>
+                  <td>Example 7:</td>
+                  <td><a class="phase_track" href="resources/audio_examples/phase_tests/7_clean.wav">Clean</a></td> 
+                  <td><a class="phase_track" href="resources/audio_examples/phase_tests/7_clipped.wav">Clipped</a></td>
+                  <td><a class="phase_track" href="resources/audio_examples/phase_tests/7_reconstructed.wav">Reconstructed</a></td>
+                </tr>
+              </table>
+            </div>
+          </td>
+        </tr>
+      </table>
+
+      <p>The declipping examples demonstrate the performance of the declipping algorithm.
+        The phase tests demonstrate that clipping distorts a signal's frequency content 
+        more its phase content. The input and clipped signals are blocked, and
+        a reconstructed signal is created by combining the original signal's FFT magnitude with
+        the clipped signal's FFT phase. As you can hear, the reconstructed signal sounds extremely
+        similar to the original signal.
+      </p>
+
+    </div>
+    <div class="add_padding">
+    <div class="gray_container">
+      <div class="small_header">Noise Removal</div><p>
+      Noise removal is the process of removing stationary noise from a signal. 
+      This is accomplished by first estimating statistical properties of the noise
+      from the signal. Then, an estimate of the original signal is obtained by
+      minimizing a cost function. We use a cost function proposed by 
+      Wolfe et. al. (<i>Wolfe, Patrick J., and Simon J. Godsill. "Efficient alternatives to the Ephraim
+      and Malah suppression rule for audio signal enhancement." EURASIP Journal on
+      Advances in Signal Processing 2003.10 (2003): 1-9.</i>)
+      that jointly estimates the original signal's magnitude and phase using the
+      maximum a posteriori (MAP) estimator. <p>
+      To estimate the noise profile, we prompt the user to highlight sections 
+      of the signal containing only noise, and from these sections, we estimate the Fast 
+      Fourier Transform (FFT) magnitude components of the noise by averaging the
+      FFT magnitudes of each block selected by the user. We automatically suggest
+      noise-only sections of the audio by looking for sections of the signal with
+      a root-mean-square (RMS) value lower than a threshold, which is calculated
+      as a percentage of the peak amplitude in the signal. 
+    </div>
+    <div class="add_padding">
+    <div class="gray_container">
+      <div class="small_header">Perceptual Equalization</div><p>
+      The perceptual equalizer is a filter whose paramters are selected by moving
+      sliders associated with a few terms that correspond to different frequency ranges.
+      The implementation is nothing more than a few biquad filters with midpoint
+      frequencies chosen based upon various audio production tutorials.
+    </div>
   </div>
 </body>
 </html>

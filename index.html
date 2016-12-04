@@ -1,260 +1,270 @@
 <!DOCTYPE HTML>
 <html>
-<head>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <meta http-equiv="Cache-control" content="no-cache">
-  <title>REPAIR</title>
+<div id="loading_content">Loading...</div>
+<div id="everything">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta http-equiv="Cache-control" content="no-cache">
+    <title>REPAIR</title>
 
-  <link rel="stylesheet" type="text/css" href="css/third_party/w2ui-1.4.3.css"></link>
-  <link rel="stylesheet" type="text/css" href="css/index.css">
+    <link rel="stylesheet" type="text/css" href="css/third_party/w2ui-1.4.3.css"></link>
+    <link rel="stylesheet" type="text/css" href="css/index.css">
 
-  <script src="js/third_party/requirejs/require.js" data-main="js/AppIndex"></script>
-</head>
+    <script src="js/third_party/requirejs/require.js" data-main="js/AppIndex"></script>
+  </head>
 
-<body>
-  <h1><center>REPAIR</div><!--<img src="resources/logo_2.png"></img>--> </center></h1>
-
-  <div id="repair_content" style="margin:auto">
-    <!--<div id="intro_text">
-      <p>REPAIR is a tool for repairing and enhancing audio files, particularly
-      audio recorded from mobile phones. </p>
-      <p>Drag and drop a file into the workspace below to get started!</p>
-    </div>-->
-
-    <!--<div class="small_padding"></div>-->
-    
-    <div id="repair_container">
-      <table id="waveform_table">
+  <body>
+    <div id="title_container">
+      <table id="title_table">
         <tr>
-          <td id="repair_td">
-            <div id="waveform_container">
-              <div id="original_waveform_container" >
-
-                <!-- Think about adding regions while hidden <button id="display_noise_profile_button" class="parameter_display_buttons">Hide Noise Regions</button> -->
-
-                <div class="waveform_title">Input</div>   
-                <div class="small_padding"></div>
-                <div id="original_audio_waveform" class="wavesurfer">
-          
-                  <div id="drag_container">
-
-                    <table id="load_audio_table">
-                    <tr>
-                      <td class="drag_audio_td" colspan="2">
-                        <div id="drag_audio">
-                          <div class="load_audio_span">Drag Audio Here</div>
-                        </div>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td class="load_audio_td">
-                        <div id="visible_audio_input">
-                          <input id="audio_input" type="file" accept="audio/*"></input>
-                          <button id="visible_audio_button">Upload File</button>
-                        </div>
-                      </td>
-                      <td class="load_audio_td">
-                        <div class="dropdown">
-                          <button id="load_example_button">Load Example</button>
-                          <div id="myDropdown" class="dropdown-content">
-                            <a id="clipping_example">Clipping Example</a>
-                            <a id="noisy_example">Noisy Example</a>
-                            <a id="eq_example">EQ Example</a>
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
-                  </table>
-                </div>
-              </div>
-              </div><div class="small_padding"></div>
-
-              <div id="processed_waveform_container">
-                <div class="waveform_title">Output</div>
-                <div class="small_padding"></div>
-                <div id="processed_audio_waveform" class="wavesurfer"></div>
-              </div>
-
-            </div>
-          </td>
-
-          <td id="module_button_td">
-            <table id="plugins_container">
-              <tr class="plugins_tr"><td>
-                <table class="plugins_table">
-                  <tr><td class="bypass_td">
-                    <img id="declip_bypass_image" class="bypass_image" src="resources/transport/inactive.png"></img>
-                  </td></tr>
-                  <tr class="plugin_tr"><td class="plugin_td">
-                    <!--<img id="declip_image" class="plugin_image" src="resources/DeclipIconOff.png"></img>-->
-                    <button id="declip_image" class="module_button">Declip</button>
-                  </td></tr>
-                </table>
-              </td></tr>
-              <tr class="plugins_tr"><td>
-                <table class="plugins_table">
-                  <tr><td class="bypass_td">
-                    <img id="noise_removal_bypass_image" class="bypass_image" src="resources/transport/inactive.png"></img>
-                  </td></tr>
-                  <tr class="plugin_tr"><td class="plugin_td">
-                    <!--<img id="noise_removal_image" class="plugin_image" src="resources/RemoveNoiseIconOff.png"></img>-->
-                    <button id="noise_removal_image" class="module_button">Noise Removal</button>
-                  </td></tr>
-                </table>
-              </td></tr>
-              <tr class="plugins_tr"><td>
-                <table class="plugins_table">
-                  <tr><td class="bypass_td">
-                    <img id="auto_eq_bypass_image" class="bypass_image" src="resources/transport/inactive.png"></img>
-                  </td></tr>
-                  <tr class="plugin_tr"><td class="plugin_td">
-                    <button id="auto_eq_image" class="module_button">EQ</button>
-                  </td></tr>
-                </table>
-                <!--<img id="auto_eq_image" class="plugin_image" src="resources/AutoEQIconOff.png"></img>-->
-              </td></tr>
-            </table>
-          </td>
-        </tr>
-
-        <tr>
-          <td id="transport_td">
-            <div id="transport_container">
-              <div id="transport_zoom_container">
-                <img id="zoom_in_button" class="zoom_image" type="image" src="resources/transport/plus.png"></img>
-                <img id="zoom_out_button" class="zoom_image" type="image" src="resources/transport/minus.png"></img>
-              </div>
-              <div id="transport_processing_container">
-                <button id="repair_button" class="processing_button">Repair!</button>
-                <button id="preview_button" class="processing_button">Preview</button>
-              </div>
-
-              <div id="transport_buttons_container">
-                <img id="toggle_waveform_button" class="transport_image" type="image" src="resources/transport/toggle_original.png"></img>
-                <img id="play_pause_button" class="transport_image" type="image" src="resources/transport/play.png"></img>
-                <img id="play_selection_button" class="transport_image" type="image" src="resources/transport/play_selection.png"></img>
-              </div>
-           </div>
-          </td>
-          <td id="download_td">
-            <div id="transport_clear_container">
-              <img id="download_audio_button" class="clear_image" type="image" src="resources/transport/download.png"></img>
-              <img id="clear_audio_button" class="clear_image" type="image" src="resources/transport/clear.png"></img>
-            </div>
-          </td>
+          <td class="title_td"></td>
+          <td class="title_td"><div id="header">REPAIR</div></td>
+          <td class="title_td"><div id="description_link"></div></td>
         </tr>
       </table>
-
-      <div id="module_options_container">
-
-        <div id="declip_tab" class="tab"></div>
-        <div id="noise_removal_tab" class="tab"></div>
-        <div id="auto_eq_tab" class="tab"></div>
-
-        <div id="declip_options_view" class ="options_view">
-          <table class="options_table">
-            <tr>
-              <td class="explanation_td">
-                <div class="explanation">
-                  Some percent of the audio file contains clipping.
-                </div>
-              </td>
-              <td class="parameters_td"></td>
-              <td class="activate_td">
-                <button id="declip_activate_button" class="activate_button">Bypass</button>
-              </td>
-            </tr>
-          </table>
-        </div>
-        <div id="noise_removal_options_view" class ="options_view">
-          <table class="options_table">
-            <tr>
-              <td class="explanation_td">
-                <div class="explanation">
-                  To remove noise, we need to know some characteristics of the noise you
-                  wish to remove. Therefore, please select a portion of the <b>input</b> file 
-                  containing only noise. The beginning or end of the audio file might be
-                  a good place to start.
-                </div>
-              </td>
-              <td class="parameters_td" style="text-align: center;">
-                <table>
-                  <tr>
-                    <td>Noise Threshold</td>
-                    <td></td>
-                  </tr>
-                  <tr>
-                    <td><input type="range" min="0" max="100" value="50" id="noise_threshold_slider" class="vertical_slider" orient="vertical"></input></td>
-                    <td><button id="noise_profile_button" class="parameter_display_buttons">Add Noise Region</button></td>
-                  </tr>
-                  <tr>
-                    <td id="noise_threshold_display">Some %</td>
-                    <td></td>
-                  </tr>
-                </table>
-              </td>
-              <td class="activate_td">
-                <button id="noise_removal_activate_button" class="activate_button">Bypass</button>
-              </td>
-            </tr>
-          </table>
-        </div>
-        <div id="auto_eq_options_view" class ="options_view">
-          <table class="options_table">
-            <tr>
-              <td class="explanation_td">
-                <div class="explanation">
-                  The auto-equalizer explanation goes here.
-                </div>
-              </td>
-              <td class="parameters_td" style="text-align: center;">
-                <table>
-                  <tr>
-                    <td>Warm</td>
-                    <td>Bright</td>
-                  </tr>
-                  <tr>
-                    <td><input type="range" min="0" max="100" value="50" id="warmth_slider" class="vertical_slider" orient="vertical"></input></td>
-                    <td><input type="range" min="0" max="100" value="50" id="brightness_slider" class="vertical_slider" orient="vertical"></input></td>
-                  </tr>
-                </table>
-              </td>
-              <td class="activate_td">
-                <button id="auto_eq_activate_button" class="activate_button">Bypass</button>
-              </td>
-            </tr>
-          </table>
-        </div>
+      <div id="intro_text">
+        <p>REPAIR (<b>R</b>epair and <b>E</b>nhance <b>P</b>hone <b>A</b>udio on the <b>I</b>nte<b>R</b>net) is a tool for repairing and enhancing audio files, particularly
+        audio recorded from mobile phones. Drag and drop a file into the workspace below to get started! <a href="description.html">More Info</a><!--<button id="description_link_button" class="link_button">More Info</button>--></p>
+        <p></p>
       </div>
     </div>
-  </div>
-  <p><a href="listening_examples.html">Listening Examples</a></p>
-  <div id="empty_option"></div>
+    <div id="repair_content">    
+      <div id="repair_container">
+        <table id="waveform_table">
+          <tr>
+            <td id="repair_td">
+              <div id="waveform_container">
+                <div id="original_waveform_container" >
 
-  <div id="audio_processing_progress_popup" style="display: none; width: 650px; height: 110px; overflow: auto">
-      <div id="progress_title" rel="title">
-          Processing Audio
-      </div>
-      <div rel="body">
-        <div id="popup_subtitle"> Change me!</div>
-        <div style="padding: 10; font-size: 11px; line-height: 150%;">
-          Progress: 
-          <div id="progress_bar" style="position: relative; width: 100%; height: 20px; background-color: grey;">
-            <div id="progress_bar_progress" style="position: absolute; width: 1%; height: 100%; background-color: green"></div>
+                  <!-- Think about adding regions while hidden <button id="display_noise_profile_button" class="parameter_display_buttons">Hide Noise Regions</button> -->
+
+                  <div class="waveform_title">Input</div>   
+                  <div class="small_padding"></div>
+                  <div id="original_audio_waveform" class="wavesurfer">
+            
+                    <div id="drag_container">
+
+                      <table id="load_audio_table">
+                      <tr>
+                        <td class="drag_audio_td" colspan="2">
+                          <div id="drag_audio">
+                            <div class="load_audio_span">Drag Audio Here</div>
+                          </div>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td class="load_audio_td">
+                          <div id="visible_audio_input">
+                            <input id="audio_input" type="file" accept="audio/*"></input>
+                            <button id="visible_audio_button">Upload File</button>
+                          </div>
+                        </td>
+                        <td class="load_audio_td">
+                          <div class="dropdown">
+                            <button id="load_example_button">Load Example</button>
+                            <div id="myDropdown" class="dropdown-content">
+                              <a id="clipping_example">Clipping Example</a>
+                              <a id="noisy_example">Noisy Example</a>
+                              <a id="eq_example">EQ Example</a>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    </table>
+                  </div>
+                </div>
+                </div><div class="small_padding"></div>
+
+                <div id="processed_waveform_container">
+                  <div class="waveform_title">Output</div>
+                  <div class="small_padding"></div>
+                  <div id="processed_audio_waveform" class="wavesurfer"></div>
+                </div>
+
+              </div>
+            </td>
+
+            <td id="module_button_td">
+              <table id="plugins_container">
+                <tr class="plugins_tr"><td>
+                  <table class="plugins_table">
+                    <tr><td class="bypass_td">
+                      <img id="declip_bypass_image" class="bypass_image" src="resources/transport/inactive.png"></img>
+                    </td></tr>
+                    <tr class="plugin_tr"><td class="plugin_td">
+                      <button id="declip_image" class="module_button">Declip</button>
+                    </td></tr>
+                  </table>
+                </td></tr>
+                <tr class="plugins_tr"><td>
+                  <table class="plugins_table">
+                    <tr><td class="bypass_td">
+                      <img id="noise_removal_bypass_image" class="bypass_image" src="resources/transport/inactive.png"></img>
+                    </td></tr>
+                    <tr class="plugin_tr"><td class="plugin_td">
+                      <button id="noise_removal_image" class="module_button">Noise Removal</button>
+                    </td></tr>
+                  </table>
+                </td></tr>
+                <tr class="plugins_tr"><td>
+                  <table class="plugins_table">
+                    <tr><td class="bypass_td">
+                      <img id="auto_eq_bypass_image" class="bypass_image" src="resources/transport/inactive.png"></img>
+                    </td></tr>
+                    <tr class="plugin_tr"><td class="plugin_td">
+                      <button id="auto_eq_image" class="module_button">EQ</button>
+                    </td></tr>
+                  </table>
+                </td></tr>
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td id="transport_td">
+              <div id="transport_container">
+                <div id="transport_zoom_container">
+                  <img id="zoom_in_button" class="zoom_image" type="image" src="resources/transport/plus.png"></img>
+                  <img id="zoom_out_button" class="zoom_image" type="image" src="resources/transport/minus.png"></img>
+                </div>
+                <div id="transport_processing_container">
+                  <button id="repair_button" class="processing_button">Repair!</button>
+                  <button id="preview_button" class="processing_button">Preview</button>
+                </div>
+
+                <div id="transport_buttons_container">
+                  <img id="toggle_waveform_button" class="transport_image" type="image" src="resources/transport/toggle_original.png"></img>
+                  <img id="play_pause_button" class="transport_image" type="image" src="resources/transport/play.png"></img>
+                  <img id="play_selection_button" class="transport_image" type="image" src="resources/transport/play_selection.png"></img>
+                </div>
+             </div>
+            </td>
+            <td id="download_td">
+              <div id="transport_clear_container">
+                <img id="download_audio_button" class="clear_image" type="image" src="resources/transport/download.png"></img>
+                <img id="clear_audio_button" class="clear_image" type="image" src="resources/transport/clear.png"></img>
+              </div>
+            </td>
+          </tr>
+        </table>
+
+        <div id="module_options_container">
+
+          <div id="declip_tab" class="tab"></div>
+          <div id="noise_removal_tab" class="tab"></div>
+          <div id="auto_eq_tab" class="tab"></div>
+
+          <div id="declip_options_view" class ="options_view">
+            <table class="options_table">
+              <tr>
+                <td class="explanation_td">
+                  <div class="explanation">
+                    This module removes clipping. Note that extreme clipping cannot be removed,
+                    and that this module will not effect files that do not contain clipping.
+                    See the clipping example for an idea of the type of clipping that
+                    can be removed.
+                  </div>
+                </td>
+                <td class="parameters_td"></td>
+                <td class="activate_td">
+                  <button id="declip_activate_button" class="activate_button">Bypass</button>
+                </td>
+              </tr>
+            </table>
+          </div>
+          <div id="noise_removal_options_view" class ="options_view">
+            <table class="options_table">
+              <tr>
+                <td class="explanation_td">
+                  <div class="explanation">
+                    This module removes background noise. Regions of noise are automatically detected
+                    and highlighted on the input audio. No noise regions? Increase the threshold. Non-noise
+                    regions are selected? Lower the threshold, or double click to remove regions. You can
+                    also add noise regions manually by selecting and clicking the Add Noise Region button.
+                    <p>Note that foreground noises like wind and speech can not be removed with this
+                      module.</p>
+                  </div>
+                </td>
+                <td class="parameters_td" style="text-align: center;">
+                  <table class="params_table">
+                    <tr>
+                      <td>Noise Threshold</td>
+                      <td></td>
+                    </tr>
+                    <tr>
+                      <td><input type="range" min="0" max="100" value="50" id="noise_threshold_slider" class="vertical_slider" orient="vertical"></input></td>
+                      <td><button id="noise_profile_button" class="parameter_display_buttons">Add Noise Region</button></td>
+                    </tr>
+                    <tr>
+                      <td id="noise_threshold_display">Some %</td>
+                      <td></td>
+                    </tr>
+                  </table>
+                </td>
+                <td class="activate_td">
+                  <button id="noise_removal_activate_button" class="activate_button">Bypass</button>
+                </td>
+              </tr>
+            </table>
+          </div>
+          <div id="auto_eq_options_view" class ="options_view">
+            <table class="options_table">
+              <tr>
+                <td class="explanation_td">
+                  <div class="explanation">
+                    The perceptual equalizer modifies the sound quality by applying
+                    a filter. Move the sliders to make the file sound more or less warm,
+                    bright, or deep.
+                  </div>
+                </td>
+                <td class="parameters_td" style="text-align: center;">
+                  <table class="params_table">
+                    <tr>
+                      <td>Warm</td>
+                      <td>Bright</td>
+                    </tr>
+                    <tr>
+                      <td><input type="range" min="0" max="100" value="50" id="warmth_slider" class="vertical_slider" orient="vertical"></input></td>
+                      <td><input type="range" min="0" max="100" value="50" id="brightness_slider" class="vertical_slider" orient="vertical"></input></td>
+                    </tr>
+                  </table>
+                </td>
+                <td class="activate_td">
+                  <button id="auto_eq_activate_button" class="activate_button">Bypass</button>
+                </td>
+              </tr>
+            </table>
           </div>
         </div>
       </div>
-  </div>
+    </div>
+    <div id="empty_option"></div>
+
+    <div id="audio_processing_progress_popup" style="display: none; width: 650px; height: 110px; overflow: auto">
+        <div id="progress_title" rel="title">
+            Processing Audio
+        </div>
+        <div rel="body">
+          <div id="popup_subtitle"> Change me!</div>
+          <div style="padding: 10; font-size: 11px; line-height: 150%;">
+            Progress: 
+            <div id="progress_bar" style="position: relative; width: 100%; height: 20px; background-color: grey;">
+              <div id="progress_bar_progress" style="position: absolute; width: 1%; height: 100%; background-color: green"></div>
+            </div>
+          </div>
+        </div>
+    </div>
 
 
-  <div id="plot_div" width=100px height=100px></div>
-  <a id="download_processed_audio" style="display:none;"></a>
-  <iframe id="my_iframe" style="display:none;">
-  <script>
-  function Download(url) {
-      document.getElementById('my_iframe').src = url;
-  };
-  </script>
-</body>
+    <div id="plot_div" width=100px height=100px></div>
+    <a id="download_processed_audio" style="display:none;"></a>
+    <iframe id="my_iframe" style="display:none;">
+    <script>
+    function Download(url) {
+        document.getElementById('my_iframe').src = url;
+    };
+    </script>
+  </body>
 
+</div>
 </html>

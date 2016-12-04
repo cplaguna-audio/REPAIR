@@ -30,23 +30,28 @@ var playlist;
 var tracks;
 var current;
 
+var WAIT_TIME = 200;
+
 $(document).ready(function() {
   init_phase();
   init_declipping();
 
+  $("#description_link_button").click(function() { 
+    window.location='index.html';
+  });
+
   function init_phase(){
     current = 0;
-    phase_audio = $('#phase_player');
+    phase_audio = $('#phase_player')[0];
     playlist = $('#phase_playlist');
     tracks = playlist.find('a.phase_track');
     len = tracks.length - 1;
-    phase_audio[0].volume = .20;
-    phase_audio[0].play();
+    phase_audio.volume = .20;
     playlist.find('a').on('click', function(e){
         e.preventDefault();
         link = $(this);
         current = link.parent().index();
-        run_phase(link, phase_audio[0]);
+        run_phase(link, phase_audio);
         return false;
     });
   }
@@ -56,23 +61,27 @@ $(document).ready(function() {
     par = link.parent();
     $('.phase_active').removeClass('phase_active');
     par.addClass('phase_active');
-    phase_audio[0].load();
-    phase_audio[0].play();
+    
+    phase_audio.pause(); 
+
+    setTimeout(function () {
+      phase_audio.load();
+      phase_audio.play(); 
+      }, WAIT_TIME);
   }
 
   function init_declipping(){
     current = 0;
-    declipping_audio = $('#declipping_player');
+    declipping_audio = $('#declipping_player')[0];
     playlist = $('#declipping_playlist');
     tracks = playlist.find('a.declipping_track');
     len = tracks.length - 1;
-    declipping_audio[0].volume = .20;
-    declipping_audio[0].play();
+    declipping_audio.volume = .20;
     playlist.find('a').on('click', function(e){
         e.preventDefault();
         link = $(this);
         current = link.parent().index();
-        run_declipping(link, declipping_audio[0]);
+        run_declipping(link, declipping_audio);
         return false;
     });
   }
@@ -82,7 +91,13 @@ $(document).ready(function() {
     par = link.parent();
     $('.declipping_active').removeClass('declipping_active');
     par.addClass('declipping_active');
-    declipping_audio[0].load();
-    declipping_audio[0].play();
+
+    declipping_audio.pause(); 
+
+    setTimeout(function () { 
+      declipping_audio.load();
+      declipping_audio.play();
+    }, WAIT_TIME);
+
   }
 });

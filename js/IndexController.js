@@ -426,7 +426,7 @@ function EQExampleClicked() {
     var download_element = document.getElementById("download_processed_audio");
     var url = window.URL.createObjectURL(wav_blob);
     download_element.href = url;
-    download_element.download = "ClipAway-Declipped-" + IndexGlobal.FILE_NAME + '.wav';
+    download_element.download = "REPAIR_output.wav";
     download_element.click();
     window.URL.revokeObjectURL(url);
   }
@@ -701,6 +701,9 @@ function EQExampleClicked() {
     });
 
     // Add the click handlers.
+    $("#description_link_button").click(function() {
+      window.location='description.html';
+    })
     $("#load_example_button").click(LoadExampleClicked);
 
     $("#clipping_example").click(function() { ClippingExampleClicked(); });
@@ -779,6 +782,10 @@ function EQExampleClicked() {
         NOISE_PROFILE_WORKERS.push(noise_profile_worker);
       }
 
+      $("#loading_content")[0].style.display = "none";
+      $("#everything")[0].style.display = "block";
+
+
     }
 
     // Drag and drop.
@@ -840,6 +847,8 @@ function EQExampleClicked() {
     var CONTENT_WIDTH_PIXELS = screen_width_pixels * IndexGlobal.CONTENT_WIDTH_PERCENTAGE;
     var content_element = document.getElementById('repair_content');
     content_element.style.width = CONTENT_WIDTH_PIXELS.toString() + "px";
+    var title_element = document.getElementById('title_container');
+    title_element.style.width = (CONTENT_WIDTH_PIXELS * 1).toString() + "px";
 
     // Progress bar.
     PROGRESS = [];
@@ -1493,16 +1502,10 @@ function EQExampleClicked() {
     var declip_img = document.getElementById("declip_bypass_image");
     if(IndexGlobal.STATE.declip_active) {
       declip_img.src = "resources/transport/active.png";
-      declip_img.style.marginBottom = "0in";
-      declip_img.style.borderBottomWidth = "0px";
-      $("#declip_image")[0].style.borderTopWidth = "0px";
       declip_activate_button.firstChild.data = "On";
     }
     else {
       declip_img.src = "resources/transport/inactive.png";
-      declip_img.style.marginBottom = "0.05in";
-      declip_img.style.borderBottomWidth = "1px";
-      $("#declip_image")[0].style.borderTopWidth = "1px";
       declip_activate_button.firstChild.data = "Off";
     }
 
@@ -1511,16 +1514,10 @@ function EQExampleClicked() {
     var noise_removal_image = document.getElementById("noise_removal_image");
     if(IndexGlobal.STATE.noise_removal_active) {
       noise_removal_bypass_image.src = "resources/transport/active.png";
-      noise_removal_bypass_image.style.marginBottom = "0in";   
-      noise_removal_bypass_image.style.borderBottomWidth = "0px";
-      noise_removal_image.style.borderTopWidth = "0px";
       noise_removal_activate_button.firstChild.data = "On";
     }
     else {
       noise_removal_bypass_image.src = "resources/transport/inactive.png";
-      noise_removal_bypass_image.style.marginBottom = "0.05in";
-      noise_removal_bypass_image.style.borderBottomWidth = "1px";
-      noise_removal_image.style.borderTopWidth = "1px";
       noise_removal_activate_button.firstChild.data = "Off";
     }
 
@@ -1528,16 +1525,10 @@ function EQExampleClicked() {
     var auto_eq_img = document.getElementById("auto_eq_bypass_image");
     if(IndexGlobal.STATE.auto_eq_active) {
       auto_eq_img.src = "resources/transport/active.png";
-      auto_eq_img.style.marginBottom = "0in";
-      auto_eq_img.style.borderBottomWidth = "0px";
-      $("#auto_eq_image")[0].style.borderTopWidth = "0px";
       auto_eq_activate_button.firstChild.data = "On";
     }
     else {
       auto_eq_img.src = "resources/transport/inactive.png";
-      auto_eq_img.style.marginBottom = "0.05in";
-      auto_eq_img.style.borderBottomWidth = "1px";
-      $("#auto_eq_image")[0].style.borderTopWidth = "1px";
       auto_eq_activate_button.firstChild.data = "Off";
     }
   }

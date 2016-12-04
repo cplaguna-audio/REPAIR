@@ -5,6 +5,14 @@
  *                                                                           *
  *****************************************************************************/
 
+#loading_content {
+  text-align: center;
+}
+
+#everything {
+  display:none;
+}
+
 body {
   background-color:#FEFEFE;
   /* background-image: url("../resources/background-3.jpg"); 
@@ -19,18 +27,60 @@ button:focus {
   outline: 0;
 }
 
-h1 {
+a {
+  text-decoration: none;
+  font-weight: bold;
+}
+
+#header {
   color: #000000;
-  font-style: bold italic;
+  font-size: 2em;
+  font-weight: bold;
+  text-align: center;
+  padding-top: 0.2in;
+}
+
+#title_container {
+  margin: 0 auto;
+  margin-bottom: 0.2in;
+
+/*
+  background-color: rgba(150,150,150,0.999);
+  border-style: solid;
+  border-width: 1px;
+  border-color: #000000;
+  border-radius: 20px;
+  box-shadow: 0px 1px 1px 0 #666666, 0px 1px 1px 0 #666666;
+*/
+}
+
+#title_table {
+  width: 100%;
+  height: 3%;
+  border-collapse: collapse;
+}
+
+.title_td {
+  width: 33%;
+}
+
+#description_link {
+  float: right;
+  padding-right: 0.3in;
 }
 
 #intro_text {
-  padding-left:25px;
-  padding-right:25px;
+  padding-left: 0.3in;
+  padding-right: 0.3in;
+  line-height: 1.5;
 }
 
 .small_padding {
   height: 0.05in;
+}
+
+#repair_content {
+  margin:0 auto; 
 }
 
 #audio_file_chooser {
@@ -127,7 +177,7 @@ h1 {
   z-index: 6;
 }
 
-#visible_audio_button, #load_example_button {
+#visible_audio_button, #load_example_button, .link_button {
   color: #A5A5A5;
   background-color: #444444;
   border-style: solid;
@@ -308,6 +358,10 @@ h1 {
   background: rgba(150,150,150,0.999);
   border-radius: 20px;
   box-shadow: 0 4px 5px 0 #333333, 0 4px 5px 0 #333333;
+
+  -moz-box-sizing: border-box; 
+  -webkit-box-sizing: border-box; 
+  box-sizing: border-box;
 }
 
 .tab {
@@ -350,7 +404,7 @@ h1 {
 }
 
 #auto_eq_tab::after {
-  content: 'Auto-Eq';
+  content: 'Perceptual Eq';
   position: relative;
   z-index: 4;
 }
@@ -390,10 +444,12 @@ h1 {
 }
 
 .parameters_td {
-  padding: 0.05in;
+  padding: 0.1in;
   width: 45%;
   height: 98%;
+  vertical-align: top;
 }
+
 
 .activate_td {
   padding: 0.05in;
@@ -405,10 +461,15 @@ h1 {
 .explanation {
   width: 96%;
   height: 100%;
-  padding: 0.05in;
+  padding: 0.1in;
+  margin: 0.1in;
   background-color: #EEEEEE;
   border-style: solid;
   border-width: 1px;
+
+  -moz-box-sizing: border-box; 
+  -webkit-box-sizing: border-box; 
+  box-sizing: border-box;
 }
 
 #empty_option {
@@ -431,7 +492,7 @@ h1 {
 }
 
 .bypass_td {
-  height: 0.13in;
+  height: 0.18in;
   width: 100%;
   padding-bottom: 0in;
   padding-left: 0in;

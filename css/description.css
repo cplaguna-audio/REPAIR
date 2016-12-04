@@ -1,0 +1,90 @@
+/*****************************************************************************\
+ *                                  Index.css                                *
+ *                                                                           *
+ *  Style sheet corresponding to index.html.                                 *
+ *                                                                           *
+ *****************************************************************************/
+
+body {
+  background-color:#FEFEFE;
+  /* background-image: url("../resources/background-3.jpg"); 
+  background-size: 100% 100%; */
+  font-family: arial;
+}
+button {
+  font-family: arial;
+}
+
+.header {
+  color: #000000;
+  font-size: 2em;
+  font-weight: bold;
+  text-align: center;
+  padding-bottom: 0.2in;
+}
+
+#title_table {
+  width: 100%;
+  height: 3%;
+  border-collapse: collapse;
+}
+
+.title_td {
+  width: 33%;
+}
+
+.small_header {
+  font-weight: bold;
+  text-align: center;
+}
+
+#modules_header {
+  padding-top: 0.2in;
+}
+
+.link_button {
+  color: #A5A5A5;
+  background-color: #444444;
+  border-style: solid;
+  border-width: 1px;
+  border-color: #000000;
+  border-radius: 3px;
+  box-shadow: 0px 1px 1px 0 #666666, 0px 1px 1px 0 #666666;
+  font-size: 0.8em;
+  float: right;
+}
+
+.link_button:focus {
+  outline: none;
+}
+
+#body_container {
+  background-color: rgba(150,150,150,0.999);
+  width:90%;
+  margin: 0 auto;
+
+  border-style: solid;
+  border-width: 1px;
+  border-color: #000000;
+  border-radius: 20px;
+  box-shadow: 0px 1px 1px 0 #666666, 0px 1px 1px 0 #666666;
+  margin-bottom: 0.2in;
+  padding: 0.3in;
+  line-height: 1.5;
+}
+
+.gray_container {
+  border-style: solid;
+  border-width: 1px;
+  background-color: #BBBBBB;
+  border-radius: 5px;
+  padding: 0.2in;
+}
+
+#instructions_ol {
+  margin-bottom: 0in;
+}
+
+.add_padding {
+  padding-top: 0.2in;
+}
