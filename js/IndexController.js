@@ -237,7 +237,7 @@ define([
         action_queue.push(DoDetectClipping);
         action_queue.push(DoNormalizeInput);
         action_queue.push(DoNormalizeOutput);
-        UpdateNoiseProfileIntervals(IndexGlobal.INITIAL_NOISE_THRESHOLD_PERCENTAGE);
+        action_queue.push(DoUpdateNoiseProfileIntervalsInitial);
         action_queue.push(DoNoiseProfile);
         action_queue.push(DoFindPreview);
         DoFirstAction();
@@ -269,7 +269,7 @@ define([
           action_queue.push(DoDetectClipping);
           action_queue.push(DoNormalizeInput);
           action_queue.push(DoNormalizeOutput);
-          UpdateNoiseProfileIntervals(IndexGlobal.INITIAL_NOISE_THRESHOLD_PERCENTAGE);
+          action_queue.push(DoUpdateNoiseProfileIntervalsInitial);
           action_queue.push(DoNoiseProfile);
           action_queue.push(DoFindPreview);
           DoFirstAction();
@@ -302,7 +302,7 @@ define([
           action_queue.push(DoDetectClipping);
           action_queue.push(DoNormalizeInput);
           action_queue.push(DoNormalizeOutput);
-          UpdateNoiseProfileIntervals(IndexGlobal.INITIAL_NOISE_THRESHOLD_PERCENTAGE);
+          action_queue.push(DoUpdateNoiseProfileIntervalsInitial);
           action_queue.push(DoNoiseProfile);
           action_queue.push(DoFindPreview);
           DoFirstAction();
@@ -335,7 +335,7 @@ function EQExampleClicked() {
           action_queue.push(DoDetectClipping);
           action_queue.push(DoNormalizeInput);
           action_queue.push(DoNormalizeOutput);
-          UpdateNoiseProfileIntervals(IndexGlobal.INITIAL_NOISE_THRESHOLD_PERCENTAGE);
+          action_queue.push(DoUpdateNoiseProfileIntervalsInitial);
           action_queue.push(DoNoiseProfile);
           action_queue.push(DoFindPreview);
           DoFirstAction();
@@ -391,6 +391,11 @@ function EQExampleClicked() {
     action_queue.push(DoNoiseProfile);
     DoFirstAction();
     IndexGlobal.STATE.noise_removal_active = true;
+  }
+
+  function DoUpdateNoiseProfileIntervalsInitial() {
+    UpdateNoiseProfileIntervals(IndexGlobal.INITIAL_NOISE_THRESHOLD_PERCENTAGE);
+    DoNextAction();
   }
 
   function UpdateNoiseProfileIntervals(threshold_percentage) {
@@ -735,6 +740,31 @@ function EQExampleClicked() {
     });
     noise_threshold_slider[0].value = IndexGlobal.INITIAL_NOISE_THRESHOLD_PERCENTAGE;
 
+    var boom_slider = $("#boom_slider")[0];
+    var boom_display = $("#boom_display");
+    boom_slider.addEventListener("input", function() { 
+        var boom_value = boom_slider.value - 50;
+        boom_display.html(boom_value.toString());
+    });
+
+    var warmth_slider = $("#warmth_slider")[0];
+    var warmth_display = $("#warmth_display");
+    warmth_slider.addEventListener("input", function() { 
+        var warmth_value = warmth_slider.value - 50;
+        warmth_display.html(warmth_value.toString());
+    });
+
+    var brightness_slider = $("#brightness_slider")[0];
+    var brightness_display = $("#brightness_display");
+    brightness_slider.addEventListener("input", function() { 
+        var brightness_value = brightness_slider.value - 50;
+        brightness_display.html(brightness_value.toString());
+    });    
+
+    boom_slider.value = 50;
+    warmth_slider.value = 50;
+    brightness_slider.value = 50;
+
     $("#declip_activate_button").click(DeclipActivateClicked);
     $("#noise_removal_activate_button").click(NoiseRemovalActivateClicked);
     $("#auto_eq_activate_button").click(AutoEqActivateClicked);
@@ -803,7 +833,6 @@ function EQExampleClicked() {
             if(e.dataTransfer.files.length) {
 
               IndexGlobal.FILE_NAME = e.dataTransfer.files[0].name;
-
               var reader = new FileReader();
               reader.onload = function(ev) {
                 FlushIndex();
@@ -814,7 +843,7 @@ function EQExampleClicked() {
                   action_queue.push(DoDetectClipping);
                   action_queue.push(DoNormalizeInput);
                   action_queue.push(DoNormalizeOutput);
-                  UpdateNoiseProfileIntervals(IndexGlobal.INITIAL_NOISE_THRESHOLD_PERCENTAGE);
+                  action_queue.push(DoUpdateNoiseProfileIntervalsInitial);
                   action_queue.push(DoNoiseProfile);
                   action_queue.push(DoFindPreview);
                   DoFirstAction();                  
@@ -1158,7 +1187,6 @@ function EQExampleClicked() {
     action_queue.push(PlayPreview);
 
     DoFirstAction();
-
   }
 
   function DoNoiseProfile() {
@@ -1419,16 +1447,6 @@ function EQExampleClicked() {
       var auto_eq_img = document.getElementById("auto_eq_bypass_image");
       auto_eq_img.removeEventListener("click", AutoEqActivateClicked);
       auto_eq_img.addEventListener("click", AutoEqActivateClicked);
-
-      /*var show_noise_profile_button = document.getElementById("display_noise_profile_button");
-      show_noise_profile_button.disabled = false;
-      show_noise_profile_button.style.opacity = "1";
-      if(IndexGlobal.STATE.showing_noise_profile) {
-        show_noise_profile_button.firstChild.data = "Hide Noise Regions";
-      }
-      else {
-        show_noise_profile_button.firstChild.data = "Show Noise Regions";
-      }*/
     }
     else {
       IndexGlobal.WAVEFORM_INTERACTOR.DisableInteraction();
@@ -1447,10 +1465,6 @@ function EQExampleClicked() {
       var download_button = document.getElementById("download_audio_button");
       download_button.style.opacity = "0.2";
       download_button.removeEventListener('click', SaveOutputClicked);
-
-      /*var show_noise_profile_button = document.getElementById("display_noise_profile_button");
-      show_noise_profile_button.disabled = true;
-      show_noise_profile_button.style.opacity = "0.2";*/
 
       var toggle_waveform_button = document.getElementById("toggle_waveform_button");
       toggle_waveform_button.style.opacity = "0.2";

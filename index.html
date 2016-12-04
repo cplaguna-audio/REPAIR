@@ -36,8 +36,6 @@
               <div id="waveform_container">
                 <div id="original_waveform_container" >
 
-                  <!-- Think about adding regions while hidden <button id="display_noise_profile_button" class="parameter_display_buttons">Hide Noise Regions</button> -->
-
                   <div class="waveform_title">Input</div>   
                   <div class="small_padding"></div>
                   <div id="original_audio_waveform" class="wavesurfer">
@@ -228,6 +226,11 @@
                       <td><input type="range" min="0" max="100" value="50" id="boom_slider" class="vertical_slider" orient="vertical"></input></td>
                       <td><input type="range" min="0" max="100" value="50" id="warmth_slider" class="vertical_slider" orient="vertical"></input></td>
                       <td><input type="range" min="0" max="100" value="50" id="brightness_slider" class="vertical_slider" orient="vertical"></input></td>
+                    </tr>
+                    <tr>
+                      <td id="boom_display">0</td>
+                      <td id="warmth_display">0</td>
+                      <td id="brightness_display">0</td>
                     </tr>
                   </table>
                 </td>
