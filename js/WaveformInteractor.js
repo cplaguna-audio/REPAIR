@@ -240,6 +240,11 @@
         if(me.VERBOSE) {
           console.log('og region-updated');
         }
+        
+        // Ignore the noise_profile regions, which cannot be dragged.
+        if(!the_region.drag) {
+          return;
+        }
 
         me.Pause();
         if(the_region.start !== me.processed_region.start || the_region.end !== me.processed_region.end) {
