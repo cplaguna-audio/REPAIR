@@ -38,6 +38,8 @@
     'IndexController',
   ], function(IndexGlobal, IndexController) {
 
+  var REGION_ID = 0;
+
   // Prototype for a WaveformInteractor object.
   function WaveformInteractor(content_width_px) {
     this.VERBOSE = false;
@@ -240,7 +242,7 @@
         if(me.VERBOSE) {
           console.log('og region-updated');
         }
-        
+
         // Ignore the noise_profile regions, which cannot be dragged.
         if(!the_region.drag) {
           return;
@@ -252,6 +254,14 @@
             start: the_region.start,
             end: the_region.end
           });
+        }
+      });
+
+      this.original_wavesurfer.on('region-update-end', function(the_region) {
+        // Ignore the noise_profile regions, which cannot be dragged.
+        if(!the_region.drag) {
+          me.UpdateRegionFromIndex(the_region);
+          return;
         }
       });
 
@@ -299,8 +309,8 @@
         if (index > -1) {
           me.noise_profile_regions.splice(index, 1);
         }
-        the_region.remove();
         me.RemoveRegionFromIndex(the_region);
+        the_region.remove();
       });
 
       this.processed_wavesurfer.on('region-created', function(the_region) {
@@ -662,14 +672,16 @@
     }
 
     this.AddRegionToIndex = function(region) {
-      var new_interval = {start: region.start, stop: region.end};
+      var new_interval = {start: region.start, stop: region.end, rid: REGION_ID};
+      region.rid = REGION_ID;
+      REGION_ID = REGION_ID + 1;
       IndexGlobal.NOISE_PROFILE_INTERVALS.push(new_interval);
     }
 
     this.RemoveRegionFromIndex = function(region) {
       for(var idx = 0; idx < IndexGlobal.NOISE_PROFILE_INTERVALS.length; idx++) {
         var cur_interval = IndexGlobal.NOISE_PROFILE_INTERVALS[idx];
-        if(cur_interval.start === region.start && cur_interval.stop === region.end) {
+        if(cur_interval.rid === region.rid) {
           IndexGlobal.NOISE_PROFILE_INTERVALS.splice(idx, 1);
           require("IndexController").PublicDoNoiseProfile();
           break;
@@ -677,6 +689,21 @@
       }
 
       require("IndexController").RefreshIndex();
+    }
+
+    this.UpdateRegionFromIndex = function(region) {
+      for(var idx = 0; idx < IndexGlobal.NOISE_PROFILE_INTERVALS.length; idx++) {
+        var cur_interval = IndexGlobal.NOISE_PROFILE_INTERVALS[idx];
+        if(cur_interval.rid === region.rid) {
+          if(region.start === cur_interval.start && region.end === cur_interval.stop) {
+            return;
+          }
+          cur_interval.start = region.start;
+          cur_interval.stop = region.end;
+          require("IndexController").PublicDoNoiseProfile();
+          break;
+        }
+      }
     }
   }
 
