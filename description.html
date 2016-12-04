@@ -203,8 +203,11 @@
       <div class="small_header">Perceptual Equalization</div><p>
       The perceptual equalizer is a filter whose paramters are selected by moving
       sliders associated with a few terms that correspond to different frequency ranges.
-      The implementation is nothing more than a few biquad filters with midpoint
-      frequencies chosen based upon various audio production tutorials.
+      The implementation is nothing more than a few biquad filters:<p>
+      Boom: A low-shelf filter with a cutoff frequency of 60 Hz.<p>
+      Warmth: A peak filter with a middle frequency of 300 Hz.<p>
+      Brightness: A high-shelf filter with a cutoff frequency of 9000 Hz.<p>
+
     </div>
   </div>
 </body>

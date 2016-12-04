@@ -1195,9 +1195,10 @@ function EQExampleClicked() {
       }
       
       ResetProgressBar('Applying Perceptual Equalation');
+      var boom = GetBoom();
       var warmth = GetWarmth();
       var brightness = GetBrightness();
-      PerceptualEq.ApplyPerceptualEq(processed_audio_buffer, warmth, brightness, PerceptualEqCallback);
+      PerceptualEq.ApplyPerceptualEq(processed_audio_buffer, boom, warmth, brightness, PerceptualEqCallback);
     }
     else {
       alert("Load an audio file first.");
@@ -1207,6 +1208,12 @@ function EQExampleClicked() {
   /*
    * Assorted Helpers
    */
+
+  function GetBoom() {
+    var warmth_slider = document.getElementById('boom_slider');
+    return warmth_slider.value; 
+  }
+
   function GetWarmth() {
     var warmth_slider = document.getElementById('warmth_slider');
     return warmth_slider.value;

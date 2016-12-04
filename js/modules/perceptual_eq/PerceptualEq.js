@@ -43,14 +43,29 @@
    * peaking 
    * notch 
    */
+  function ConnectBoomFilter(boom, context, input_node) {
+    var biquad_gain = (boom / 50) - 1;
+    biquad_gain = biquad_gain * 13;
+
+    var biquad_filter = context.createBiquadFilter();
+    biquad_filter.type = "lowshelf";
+    biquad_filter.frequency.value = 60;
+    biquad_filter.gain.value = biquad_gain;
+
+    input_node.connect(biquad_filter);
+
+    return biquad_filter;
+  }
+
   function ConnectWarmthFilter(warmth, context, input_node) {
     var biquad_gain = (warmth / 50) - 1;
-    biquad_gain = biquad_gain * 8;
+    biquad_gain = biquad_gain * 10;
 
     var biquad_filter = context.createBiquadFilter();
     biquad_filter.type = "peaking";
-    biquad_filter.frequency.value = 1000;
+    biquad_filter.frequency.value = 300;
     biquad_filter.gain.value = biquad_gain;
+    biquad_filter.Q.value = 0.2;
 
     input_node.connect(biquad_filter);
 
@@ -63,7 +78,7 @@
 
     var biquad_filter = context.createBiquadFilter();
     biquad_filter.type = "highshelf";
-    biquad_filter.frequency.value = 10000;
+    biquad_filter.frequency.value = 9000;
     biquad_filter.gain.value = biquad_gain;
 
     input_node.connect(biquad_filter);
@@ -72,13 +87,14 @@
   }
 
   // x is an AudioBuffer.
-  function ApplyPerceptualEq(x, warmth, brightness, callback_fn) {
+  function ApplyPerceptualEq(x, boom, warmth, brightness, callback_fn) {
     var offline_context = new OfflineAudioContext(x.numberOfChannels, x.duration * x.sampleRate, x.sampleRate);
 
     var source = offline_context.createBufferSource();
     source.buffer = x;
 
-    var warmth_out_node = ConnectWarmthFilter(warmth, offline_context, source);
+    var boom_out_node = ConnectBoomFilter(boom, offline_context, source);
+    var warmth_out_node = ConnectWarmthFilter(warmth, offline_context, boom_out_node);
     var brightness_out_node = ConnectBrightnessFilter(brightness, offline_context, warmth_out_node);
 
     brightness_out_node.connect(offline_context.destination);

@@ -212,6 +212,83 @@
     return y;
   }
 
+ function MinIndex(arr) {
+    if (arr.length === 0) {
+      return -1;
+    }
+
+    var min = arr[0];
+    var minIndex = 10000;
+
+    for (var i = 1; i < arr.length; i++) {
+      if (arr[i] < min) {
+        minIndex = i;
+        min = arr[i];
+      }
+    }
+
+    return minIndex;
+  }
+
+/* It's actually not fast lol. The splices are simply too slow. */
+  function ApplyMedianFilterFast(x, order) {
+    var x_length = x.length;
+    var y = new Float32Array(x_length);
+    var half_order = Math.floor(order / 2);
+
+    var values = [];
+    var timestamps = [];
+    var original = [];
+
+    for(var idx = 0; idx < order; idx++) {
+      original[idx] = x[idx];
+      values[idx] = x[idx];
+    }
+
+    values.sort();
+    for(var og_idx = 0; og_idx < order; og_idx++) {
+      var search_for = original[og_idx];
+      for(var sort_idx = 0; sort_idx < order; sort_idx++) {
+        if(values[sort_idx] == search_for) {
+          timestamps[sort_idx] = og_idx;
+        }
+      }
+    }
+ 
+    var med_idx = Math.floor(order / 2);
+    var med = values[med_idx];
+
+    for(var idx = 0; idx <= half_order; idx++) {
+      y[idx] = med;
+    }
+
+    var next_timestamp = timestamps.length;
+    var write_idx = half_order + 1;
+    for(var idx = order; idx < x_length; idx++) {
+      var next_val = x[idx];
+
+      var prev_idx = MinIndex(timestamps);
+      //values.splice(prev_idx, 1);
+      //timestamps.splice(prev_idx, 1);
+
+      var added_idx = values.InsertInOrder(next_val);
+      
+      var med_idx = Math.floor(values.length / 2);
+      med = values[med_idx];
+      y[write_idx] = med;
+
+      write_idx++;
+      next_timestamp++;
+    }
+
+    for(var idx = 0; idx <= half_order; idx++) {
+      var write_idx = (y.length - 1) - idx;
+      y[write_idx] = med;
+    }
+
+    return y;
+  }
+
   /*
    * SignalScale()
    *
@@ -504,6 +581,7 @@
     ApplyFeedForwardFilter: ApplyFeedForwardFilter,
     ApplyFeedForwardFilterBackwards: ApplyFeedForwardFilterBackwards,
     ApplyMedianFilter: ApplyMedianFilter,
+    ApplyMedianFilterFast: ApplyMedianFilterFast,
     SignalScale: SignalScale,
     SignalAdd: SignalAdd,
     SignalSubtract: SignalSubtract,

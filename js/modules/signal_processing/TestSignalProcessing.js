@@ -59,6 +59,7 @@ define([
     tests_pass = tests_pass && TestApplyFeedForwardFilter();
     tests_pass = tests_pass && TestApplyFeedForwardFilterBackwards();
     tests_pass = tests_pass && TestApplyMedianFilter();
+    tests_pass = tests_pass && TestApplyMedianFilterFast();
     tests_pass = tests_pass && TestSignalScale();
     tests_pass = tests_pass && TestSignalAdd();
     tests_pass = tests_pass && TestSignalSubtract();
@@ -231,6 +232,24 @@ function TestApplyMedianFilter() {
     var result1 = SignalProcessing.ApplyMedianFilter(x1, order)
     if(!TestHelpers.ArrayEquality(result1, correct1)) {
       console.log('Test failed: TestApplyMedianFilter() #1');
+      console.log(result1);
+      tests_pass = false;
+    }
+
+    return tests_pass;
+  }
+
+function TestApplyMedianFilterFast() {
+    var TOLERANCE = 0.0001;
+    var tests_pass = true;
+
+    var x1 = [1, 3, 2, -5, 4, -3, 1.5, 1.2, -1];
+    var order = 5;
+    var correct1 = [2, 2, 2, 2, 1.5, 1.2, 1.2, 1.2, 1.2];
+
+    var result1 = SignalProcessing.ApplyMedianFilterFast(x1, order)
+    if(!TestHelpers.ArrayEqualityTolerance(result1, correct1, TOLERANCE)) {
+      console.log('Test failed: TestApplyMedianFilterFast() #1');
       console.log(result1);
       tests_pass = false;
     }
