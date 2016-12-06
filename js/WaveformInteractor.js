@@ -508,9 +508,6 @@
       this.processed_wavesurfer.toggleMute();
       this.processed_audio_element.style.opacity = "0.4";
       this.original_on = true;
-
-      toggle_image_el = document.getElementById("toggle_waveform_button");
-      toggle_image_el.src = "resources/transport/toggle_original.png";
     };
 
     this.TurnOnProcessed = function() {
@@ -524,9 +521,6 @@
       this.original_wavesurfer.toggleMute();
       this.original_audio_element.style.opacity = "0.4";
       this.original_on = false;
-
-      toggle_image_el = document.getElementById("toggle_waveform_button");
-      toggle_image_el.src = "resources/transport/toggle_processed.png";
     };
 
     this.PlayPausePressed = function() {

@@ -708,7 +708,8 @@ function EQExampleClicked() {
     // Add the click handlers.
     $("#description_link_button").click(function() {
       window.location='description.html';
-    })
+    });
+
     $("#load_example_button").click(LoadExampleClicked);
 
     $("#clipping_example").click(function() { ClippingExampleClicked(); });
@@ -815,6 +816,14 @@ function EQExampleClicked() {
       $("#loading_content")[0].style.display = "none";
       $("#everything")[0].style.display = "block";
 
+      // Spacebar for play/pause.
+      document.body.onkeydown = function(e){
+        if(e.keyCode === 32) {
+          $("#play_pause_button")[0].click();
+          e.preventDefault();
+          return false;
+        }
+      };
 
     }
 
