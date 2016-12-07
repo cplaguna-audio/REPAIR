@@ -15,12 +15,12 @@
 
 body {
   background-color:#FEFEFE;
-  /* background-image: url("../resources/background-3.jpg"); 
-  background-size: 100% 100%; */
   font-family: arial;
 }
 button {
   font-family: arial;
+  overflow: hidden;
+  white-space: nowrap;
 }
 
 button:focus {
@@ -98,8 +98,10 @@ a {
 
 #drag_container {
   position: absolute;
-  left: 40%;
-  width: 20%;
+  margin: 0 auto;
+  left: 0px;
+  right: 0px;
+  width: 3in;
   height: 90px;
   top: 19px;
   text-align: center;
@@ -137,6 +139,7 @@ a {
 }
 .load_audio_td {
   width: 50%;
+  height: 100%;
 }
 
 .load_audio_span {
@@ -198,6 +201,10 @@ a {
   box-shadow: 0px 1px 1px 0 #666666, 0px 1px 1px 0 #666666;
   margin-left: 2px;
   margin-right: 2px;
+}
+
+.params_table {
+  width: 50%;
 }
 
 /* The container <div> - needed to position the dropdown content */
@@ -291,7 +298,7 @@ a {
 }
 
 #transport_buttons_container {
-  width:1in;
+  width:0.66in;
 }
 
 #transport_zoom_container {
@@ -441,6 +448,7 @@ a {
   padding: 0.05in;
   width: 31%;
   height: 98%;
+  vertical-align: top;
 }
 
 .parameters_td {
@@ -460,7 +468,6 @@ a {
 
 .explanation {
   width: 96%;
-  height: 100%;
   padding: 0.1in;
   margin: 0.1in;
   background-color: #EEEEEE;
@@ -489,6 +496,7 @@ a {
 .plugins_table {
   border-collapse: collapse;
   height: 100%;
+  width: 98%;
 }
 
 .bypass_td {
@@ -497,11 +505,12 @@ a {
   padding-bottom: 0in;
   padding-left: 0in;
   padding-right: 2px;
+  padding-top: 0in;
   vertical-align: bottom;
 }
 
 .bypass_image {
-  height: 100%;
+  height: 0.18in;
   width: 100%;
   vertical-align: bottom;
   border-style: solid;
@@ -540,6 +549,7 @@ a {
   box-shadow: 0px 1px 1px 0 #666666, 0px 1px 1px 0 #666666;
   height: 100%;
   width: 100%;
+  white-space: normal;
 }
 
 .options_enabled {

@@ -55,7 +55,7 @@ define([
   var DECLIP_HOP_SIZE = 128;
 
   var MIN_FFT_LENGTH = 128;
-  var TARGET_LUFS = -14;
+  var TARGET_LUFS = -23;
 
   var STATE = { audio_loaded: false,
                 did_clipping_detection: false,
@@ -101,8 +101,7 @@ define([
   var FILE_NAME = "";
   var PROGRESS_BAR_JQUERRY_ELEMENT;
   var PROGRESS_BAR_ELEMENT;
-  var CONTENT_WIDTH_PERCENTAGE = 0.95;
-  var CONTENT_WIDTH_PIXELS;
+  var CONTENT_WIDTH_PERCENTAGE = 97;
 
   function IntervalToString(clip_intervals) {
     var the_str = "";
@@ -206,6 +205,5 @@ define([
       PROGRESS_BAR_ELEMENT: PROGRESS_BAR_ELEMENT,
       PROGRESS_BAR_JQUERRY_ELEMENT: PROGRESS_BAR_JQUERRY_ELEMENT,
       CONTENT_WIDTH_PERCENTAGE: CONTENT_WIDTH_PERCENTAGE,
-      CONTENT_WIDTH_PIXELS: CONTENT_WIDTH_PIXELS,
   };
 });

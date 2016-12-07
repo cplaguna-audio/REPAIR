@@ -825,6 +825,13 @@ function EQExampleClicked() {
         }
       };
 
+      // Resize Wavesurfer.
+      $(window).resize(function() {
+        if(IndexGlobal.STATE.audio_loaded) {
+          IndexGlobal.WAVEFORM_INTERACTOR.Resize();
+        }
+      });
+
     }
 
     // Drag and drop.
@@ -881,12 +888,11 @@ function EQExampleClicked() {
         dropTarget.addEventListener(event, handlers[event]);
     });
 
-    var screen_width_pixels = window.screen.width;
-    var CONTENT_WIDTH_PIXELS = screen_width_pixels * IndexGlobal.CONTENT_WIDTH_PERCENTAGE;
     var content_element = document.getElementById('repair_content');
-    content_element.style.width = CONTENT_WIDTH_PIXELS.toString() + "px";
+    content_element.style.width = IndexGlobal.CONTENT_WIDTH_PERCENTAGE.toString() + "%";
+
     var title_element = document.getElementById('title_container');
-    title_element.style.width = (CONTENT_WIDTH_PIXELS * 1).toString() + "px";
+    title_element.style.width = IndexGlobal.CONTENT_WIDTH_PERCENTAGE.toString() + "%";
 
     // Progress bar.
     PROGRESS = [];
@@ -1367,11 +1373,6 @@ function EQExampleClicked() {
       play_pause_button.addEventListener('click', PlayPauseHandler);
       play_pause_button.style.opacity = "1";
 
-      var play_selection_button = document.getElementById("play_selection_button");
-      play_selection_button.removeEventListener('click', PlaySelectionHandler);
-      play_selection_button.addEventListener('click', PlaySelectionHandler);
-      play_selection_button.style.opacity = "1";
-
       var clear_audio_button = document.getElementById("clear_audio_button");
       clear_audio_button.removeEventListener('click', ClearAudioClicked);
       clear_audio_button.addEventListener('click', ClearAudioClicked);
@@ -1482,10 +1483,6 @@ function EQExampleClicked() {
       var play_pause_button = document.getElementById("play_pause_button");
       play_pause_button.style.opacity = "0.2";
       play_pause_button.removeEventListener('click', PlayPauseHandler);
-
-      var play_selection_button = document.getElementById("play_selection_button");
-      play_selection_button.style.opacity = "0.2";
-      play_selection_button.removeEventListener('click', PlaySelectionHandler);
 
       var clear_audio_button = document.getElementById("clear_audio_button");
       clear_audio_button.removeEventListener('click', ClearAudioClicked);
@@ -1616,10 +1613,6 @@ function EQExampleClicked() {
 
   function PlayPauseHandler(event) {
     IndexGlobal.WAVEFORM_INTERACTOR.PlayPausePressed();
-  }
-
-  function PlaySelectionHandler(event) {
-    IndexGlobal.WAVEFORM_INTERACTOR.PlayRegion();
   }
 
   function ZoomInHandler(event) {

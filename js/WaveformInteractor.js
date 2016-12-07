@@ -494,6 +494,10 @@
         this.is_playing = true;
         play_image_el = document.getElementById("play_pause_button");
         play_image_el.src = "resources/transport/pause.png";
+        return true;
+      }
+      else {
+        return false;
       }
     };
 
@@ -528,7 +532,9 @@
         this.Pause();
       }
       else {
-        this.Play();
+        if(!this.PlayRegion()) {
+          this.Play();
+        }
       }
     }
 
@@ -698,6 +704,14 @@
           break;
         }
       }
+    }
+
+    this.Resize = function() {
+      this.original_wavesurfer.drawer.containerWidth = this.original_wavesurfer.drawer.container.clientWidth;
+      this.original_wavesurfer.drawBuffer();
+
+      this.processed_wavesurfer.drawer.containerWidth = this.processed_wavesurfer.drawer.container.clientWidth;
+      this.processed_wavesurfer.drawBuffer();
     }
   }
 

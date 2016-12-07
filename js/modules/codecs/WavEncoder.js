@@ -43,6 +43,8 @@
   function AudioBufferToWavBlob(audio_buffer) {
     var num_channels = audio_buffer.numberOfChannels;
     var fs = audio_buffer.sampleRate;
+    var num_bits = 16;
+
     if(num_channels > 2) {
       console.log("Encoding > 2 channels is not yet supported. Only writing first two channels.");
     }
@@ -54,6 +56,9 @@
     else if(num_channels == 2) {
       var interleaved = Interleave(audio_buffer.getChannelData(0), audio_buffer.getChannelData(1));
     }
+
+    interleaved = Clip(interleaved, num_bits);
+
     var num_interleaved_samples = interleaved.length;
     
     // Raw data of the .wav file.
@@ -82,7 +87,7 @@
     // Block align (channel count * bytes per sample).
     view.setUint16(32, num_channels * 2, true);
     // Bits per sample.
-    view.setUint16(34, 16, true);
+    view.setUint16(34, num_bits, true);
     // Data chunk identifier.
     writeString(view, 36, 'data');
     // Data chunk length.
@@ -119,6 +124,28 @@
     for(var i = 0; i < string.length; i++){
       view.setUint8(offset + i, string.charCodeAt(i));
     }
+  }
+
+  function Clip(x, num_bits) {
+    var y = new Float32Array(x.length);
+    delta = 2 / Math.pow(2, num_bits);
+
+    var max_val = 1 - delta;
+    var min_val = -1;
+
+    for(var idx = 0; idx < x.length; idx++) {
+      var cur_x = x[idx];
+      if(cur_x > max_val) {
+        y[idx] = max_val;
+      }
+      else if(cur_x < min_val) {
+        y[idx] = min_val;
+      }
+      else {
+        y[idx] = cur_x;
+      }
+    }
+    return y;
   }
 
   /* Public variables go here. */
