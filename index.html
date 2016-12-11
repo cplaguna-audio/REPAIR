@@ -113,6 +113,16 @@
                     </td></tr>
                   </table>
                 </td></tr>
+                <tr class="plugins_tr"><td>
+                  <table class="plugins_table">
+                    <tr><td class="bypass_td">
+                      <img id="loudness_bypass_image" class="bypass_image" src="resources/transport/active.png" title="Activate Perceptual Equalizer"></img>
+                    </td></tr>
+                    <tr class="plugin_tr"><td class="plugin_td">
+                      <button id="loudness_image" class="module_button" title="Loudness Normalization Settings">Loudness</button>
+                    </td></tr>
+                  </table>
+                </td></tr>
               </table>
             </td>
           </tr>
@@ -149,6 +159,7 @@
           <div id="declip_tab" class="tab"></div>
           <div id="noise_removal_tab" class="tab"></div>
           <div id="auto_eq_tab" class="tab"></div>
+          <div id="loudness_tab" class="tab"></div>
 
           <div id="declip_options_view" class ="options_view">
             <table class="options_table">
@@ -203,6 +214,7 @@
               </tr>
             </table>
           </div>
+
           <div id="auto_eq_options_view" class ="options_view">
             <table class="options_table">
               <tr>
@@ -238,6 +250,35 @@
               </tr>
             </table>
           </div>
+
+          <div id="loudness_options_view" class ="options_view">
+            <table class="options_table">
+              <tr>
+                <td class="explanation_td">
+                  <div class="explanation">
+                    The input and output files are loudness normalized in order
+                    to prevent loudness bias. Select the preferred loudness level.
+                  </div>
+                </td>
+                <td class="parameters_td" style="text-align: center;">
+                  <table class="params_table">
+                    <tr>
+                      <td>Loudness (LUFS)</td>
+                    </tr>
+                    <tr>
+                      <td><input type="range" min="-50" max="0" value="-23" id="loudness_slider" class="vertical_slider" orient="vertical"></input></td>
+                    </tr>
+                    <tr>
+                      <td id="loudness_display"></td>
+                    </tr>
+                  </table>
+                </td>
+                <td class="activate_td">
+                </td>
+              </tr>
+            </table>
+          </div>
+
         </div>
       </div>
     </div>

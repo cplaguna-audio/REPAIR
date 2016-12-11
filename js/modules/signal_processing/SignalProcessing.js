@@ -295,7 +295,7 @@
    * Scalar multiplication.
    * 
    * Parameters
-   *   x (float array): The input signal to smooth.
+   *   x (float array): The input signal to scale.
    *   alpha (float): The scalar.
    *
    * Return Value
@@ -308,6 +308,24 @@
     }
 
     return y;
+  }
+
+  /*
+   * SignalScaleInPlace()
+   *
+   * Scalar multiplication in place.
+   * 
+   * Parameters
+   *   x (float array): The input signal to scale.
+   *   alpha (float): The scalar.
+   *
+   * Return Value
+   *   y (float array): The scaled signal.
+   */
+  function SignalScaleInPlace(x, alpha) {
+    for(var idx = 0; idx < x.length; idx++) {
+      x[idx] = x[idx] * alpha;
+    }
   }
 
   /*
@@ -544,6 +562,10 @@
     return cur_min;
   }
 
+  function SignalPeak(x) {
+    return Math.max(MyMin(x) * -1, MyMax(x));
+  }
+
   function MyAverage(x) {
     var normalization = x.length;
     var average = 0;
@@ -583,6 +605,7 @@
     ApplyMedianFilter: ApplyMedianFilter,
     ApplyMedianFilterFast: ApplyMedianFilterFast,
     SignalScale: SignalScale,
+    SignalScaleInPlace: SignalScaleInPlace,
     SignalAdd: SignalAdd,
     SignalSubtract: SignalSubtract,
     SignalPointwiseMultiplyInPlace: SignalPointwiseMultiplyInPlace,
@@ -593,6 +616,7 @@
     FindBin: FindBin,
     MyMax: MyMax,
     MyMin: MyMin,
+    SignalPeak: SignalPeak,
     MyAverage: MyAverage,
     DBToLinear: DBToLinear,
     LinearToDB: LinearToDB,

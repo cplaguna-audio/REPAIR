@@ -133,6 +133,12 @@ define([
       module_button = document.getElementById("auto_eq_image");
       module_bypass_button = document.getElementById("auto_eq_bypass_image");
     }
+    else if(this.id === "loudness_image") {
+      plugin_options_view = document.getElementById("loudness_options_view");
+      plugin_tab = document.getElementById("loudness_tab");
+      module_button = document.getElementById("loudness_image");
+      module_bypass_button = document.getElementById("loudness_bypass_image");
+    }
 
     var should_set = plugin_options_view.style.display === "none";
 
@@ -237,6 +243,7 @@ define([
         action_queue.push(DoDetectClipping);
         action_queue.push(DoNormalizeInput);
         action_queue.push(DoNormalizeOutput);
+        action_queue.push(DoLevelCheck);
         action_queue.push(DoUpdateNoiseProfileIntervalsInitial);
         action_queue.push(DoNoiseProfile);
         action_queue.push(DoFindPreview);
@@ -269,6 +276,7 @@ define([
           action_queue.push(DoDetectClipping);
           action_queue.push(DoNormalizeInput);
           action_queue.push(DoNormalizeOutput);
+          action_queue.push(DoLevelCheck);
           action_queue.push(DoUpdateNoiseProfileIntervalsInitial);
           action_queue.push(DoNoiseProfile);
           action_queue.push(DoFindPreview);
@@ -302,6 +310,7 @@ define([
           action_queue.push(DoDetectClipping);
           action_queue.push(DoNormalizeInput);
           action_queue.push(DoNormalizeOutput);
+          action_queue.push(DoLevelCheck);
           action_queue.push(DoUpdateNoiseProfileIntervalsInitial);
           action_queue.push(DoNoiseProfile);
           action_queue.push(DoFindPreview);
@@ -335,6 +344,7 @@ function EQExampleClicked() {
           action_queue.push(DoDetectClipping);
           action_queue.push(DoNormalizeInput);
           action_queue.push(DoNormalizeOutput);
+          action_queue.push(DoLevelCheck);
           action_queue.push(DoUpdateNoiseProfileIntervalsInitial);
           action_queue.push(DoNoiseProfile);
           action_queue.push(DoFindPreview);
@@ -364,6 +374,7 @@ function EQExampleClicked() {
     }
     action_queue.push(DoNormalizeInput);
     action_queue.push(DoNormalizeOutput);
+    action_queue.push(DoLevelCheck);
 
     DoFirstAction();
   }
@@ -719,6 +730,7 @@ function EQExampleClicked() {
     $("#declip_image").click(PluginImageClicked);
     $("#noise_removal_image").click(PluginImageClicked);
     $("#auto_eq_image").click(PluginImageClicked);
+    $("#loudness_image").click(PluginImageClicked);
 
     $("#audio_input")[0].addEventListener("change", AudioInputChanged);
 
@@ -760,11 +772,21 @@ function EQExampleClicked() {
     brightness_slider.addEventListener("input", function() { 
         var brightness_value = brightness_slider.value - 50;
         brightness_display.html(brightness_value.toString());
+    });
+
+    var loudness_slider = $("#loudness_slider")[0];
+    var loudness_display = $("#loudness_display");
+    loudness_slider.addEventListener("input", function() { 
+        var loudness_value = loudness_slider.value;
+        loudness_display.html(loudness_value.toString());
     });    
+
 
     boom_slider.value = 50;
     warmth_slider.value = 50;
     brightness_slider.value = 50;
+    loudness_slider.value = IndexGlobal.TARGET_LUFS;
+    loudness_display.html(IndexGlobal.TARGET_LUFS.toString());
 
     $("#declip_activate_button").click(DeclipActivateClicked);
     $("#noise_removal_activate_button").click(NoiseRemovalActivateClicked);
@@ -859,6 +881,7 @@ function EQExampleClicked() {
                   action_queue.push(DoDetectClipping);
                   action_queue.push(DoNormalizeInput);
                   action_queue.push(DoNormalizeOutput);
+                  action_queue.push(DoLevelCheck);
                   action_queue.push(DoUpdateNoiseProfileIntervalsInitial);
                   action_queue.push(DoNoiseProfile);
                   action_queue.push(DoFindPreview);
@@ -921,15 +944,59 @@ function EQExampleClicked() {
 
   }
 
+  function DoLevelCheck() {
+    var input_buffer = IndexGlobal.INPUT_AUDIO_BUFFER;
+    var output_buffer = IndexGlobal.PROCESSED_AUDIO_BUFFER;
+    var max_peak = 0;
+    for(var c_idx = 0; c_idx < input_buffer.numberOfChannels; c_idx++) {
+      var peak = SignalProcessing.SignalPeak(input_buffer.getChannelData(c_idx));
+      if(peak > max_peak) {
+        max_peak = peak;
+      }
+
+      peak = SignalProcessing.SignalPeak(output_buffer.getChannelData(c_idx));
+      if(peak > max_peak) {
+        max_peak = peak;
+      }
+    }
+
+    if(max_peak > 1) {
+      var desired_peak = 1;
+
+      var gain = desired_peak / max_peak;
+      for(var c_idx = 0; c_idx < input_buffer.numberOfChannels; c_idx++) {
+        SignalProcessing.SignalScaleInPlace(input_buffer.getChannelData(c_idx), gain);
+        SignalProcessing.SignalScaleInPlace(output_buffer.getChannelData(c_idx), gain);
+      }
+
+      IndexGlobal.WAVEFORM_INTERACTOR.UpdateInputAudio(input_buffer, function() {} );
+      IndexGlobal.WAVEFORM_INTERACTOR.UpdateProcessedAudio(output_buffer, function() {} );
+
+      db_delta = SignalProcessing.LinearToDB(gain);
+      var new_lufs = Math.floor(IndexGlobal.CURRENT_LUFS + db_delta);
+      $("#loudness_slider")[0].value = new_lufs.toString();
+      $("#loudness_display").html(new_lufs.toString());
+
+      IndexGlobal.CURRENT_LUFS = new_lufs;
+      alert("The given loudness level would lead to clipping. The signal was scaled to avoid clipping.");
+    }
+
+    DoNextAction();
+  }
+
   function DoNormalizeInput() {
-    DoLoudnessNormalization(true);
+    var target_lufs = GetTargetLUFS();
+    IndexGlobal.CURRENT_LUFS = target_lufs;
+    DoLoudnessNormalization(true, target_lufs);
   }
 
   function DoNormalizeOutput() {
-    DoLoudnessNormalization(false);
+    var target_lufs = GetTargetLUFS();
+    IndexGlobal.CURRENT_LUFS = target_lufs;
+    DoLoudnessNormalization(false, target_lufs);
   }
 
-  function DoLoudnessNormalization(do_input_buffer) {
+  function DoLoudnessNormalization(do_input_buffer, target_lufs) {
     var audio_buffer = 0;
     if(do_input_buffer) {
       audio_buffer = IndexGlobal.INPUT_AUDIO_BUFFER;
@@ -951,7 +1018,7 @@ function EQExampleClicked() {
     };
 
     var loudness_callback = function(buffer, do_input_buffer) {
-      var gain_db = IndexGlobal.TARGET_LUFS - audio_buffer.lufs;
+      var gain_db = target_lufs - audio_buffer.lufs;
       var gain_linear = SignalProcessing.DBToLinear(gain_db);
       console.log('gain: ' + gain_linear)
       var num_channels = audio_buffer.numberOfChannels;
@@ -1252,6 +1319,10 @@ function EQExampleClicked() {
    * Assorted Helpers
    */
 
+  function GetTargetLUFS() {
+    return parseInt($("#loudness_slider")[0].value);
+  }
+
   function GetBoom() {
     var warmth_slider = document.getElementById('boom_slider');
     return warmth_slider.value; 
@@ -1457,6 +1528,7 @@ function EQExampleClicked() {
       var auto_eq_img = document.getElementById("auto_eq_bypass_image");
       auto_eq_img.removeEventListener("click", AutoEqActivateClicked);
       auto_eq_img.addEventListener("click", AutoEqActivateClicked);
+
     }
     else {
       IndexGlobal.WAVEFORM_INTERACTOR.DisableInteraction();
@@ -1522,6 +1594,7 @@ function EQExampleClicked() {
 
       var auto_eq_img = document.getElementById("auto_eq_bypass_image");
       auto_eq_img.removeEventListener("click", AutoEqActivateClicked);
+
     }
 
     // Plugin activations.
@@ -1529,11 +1602,13 @@ function EQExampleClicked() {
     var declip_img = document.getElementById("declip_bypass_image");
     if(IndexGlobal.STATE.declip_active) {
       declip_img.src = "resources/transport/active.png";
-      declip_activate_button.firstChild.data = "On";
+      declip_activate_button.firstChild.data = "On/Off";
+      declip_activate_button.style.color = "#66AA66";
     }
     else {
       declip_img.src = "resources/transport/inactive.png";
-      declip_activate_button.firstChild.data = "Off";
+      declip_activate_button.firstChild.data = "On/Off";
+      declip_activate_button.style.color = "#AA6666";
     }
 
     var noise_removal_activate_button = document.getElementById("noise_removal_activate_button");
@@ -1541,22 +1616,26 @@ function EQExampleClicked() {
     var noise_removal_image = document.getElementById("noise_removal_image");
     if(IndexGlobal.STATE.noise_removal_active) {
       noise_removal_bypass_image.src = "resources/transport/active.png";
-      noise_removal_activate_button.firstChild.data = "On";
+      noise_removal_activate_button.firstChild.data = "On/Off";
+      noise_removal_activate_button.style.color = "#66AA66";
     }
     else {
       noise_removal_bypass_image.src = "resources/transport/inactive.png";
-      noise_removal_activate_button.firstChild.data = "Off";
+      noise_removal_activate_button.firstChild.data = "On/Off";
+      noise_removal_activate_button.style.color = "#AA6666";
     }
 
     var auto_eq_activate_button = document.getElementById("auto_eq_activate_button");
     var auto_eq_img = document.getElementById("auto_eq_bypass_image");
     if(IndexGlobal.STATE.auto_eq_active) {
       auto_eq_img.src = "resources/transport/active.png";
-      auto_eq_activate_button.firstChild.data = "On";
+      auto_eq_activate_button.firstChild.data = "On/Off";
+      auto_eq_activate_button.style.color = "#66AA66";
     }
     else {
       auto_eq_img.src = "resources/transport/inactive.png";
-      auto_eq_activate_button.firstChild.data = "Off";
+      auto_eq_activate_button.firstChild.data = "On/Off";
+      auto_eq_activate_button.style.color = "#AA6666";
     }
   }
 

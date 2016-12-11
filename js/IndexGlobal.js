@@ -57,6 +57,9 @@ define([
   var MIN_FFT_LENGTH = 128;
   var TARGET_LUFS = -23;
 
+  // Loudness level of current audio.
+  var CURRENT_LUFS = TARGET_LUFS;
+
   var STATE = { audio_loaded: false,
                 did_clipping_detection: false,
                 did_declip_short_bursts: false,
@@ -177,6 +180,7 @@ define([
       
       MIN_FFT_LENGTH: MIN_FFT_LENGTH,
       TARGET_LUFS: TARGET_LUFS,
+      CURRENT_LUFS: CURRENT_LUFS,
       WAVEFORM_INTERACTOR: WAVEFORM_INTERACTOR,
 
       STATE: STATE,
